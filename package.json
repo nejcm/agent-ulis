@@ -4,9 +4,32 @@
   "description": "AI configs",
   "license": "ISC",
   "author": "nejcm",
-  "type": "commonjs",
-  "main": "index.js",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  }
+    "build": "tsx src/index.ts",
+    "build:opencode": "tsx src/index.ts --target opencode",
+    "build:claude": "tsx src/index.ts --target claude",
+    "build:codex": "tsx src/index.ts --target codex",
+    "build:cursor": "tsx src/index.ts --target cursor",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf generated",
+    "install:deps": "bun install",
+    "install:configs": "bun install.js",
+    "rebuild": "bun run build",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt --check ."
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "oxfmt": "^0.43.0",
+    "rimraf": "^6.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "bun@1.3.10"
 }

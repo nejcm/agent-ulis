@@ -1,0 +1,33 @@
+{
+  "claude": {
+    "marketplace_plugins": [
+      {
+        "name": "everything-claude-code",
+        "source": "github",
+        "repo": "affaan-m/everything-claude-code"
+      },
+      {
+        "name": "frontend-design",
+        "source": "official"
+      },
+      {
+        "name": "ralph-loop",
+        "source": "official"
+      }
+    ],
+    "marketplace_skills": [
+      {
+        "name": "find-skills"
+      },
+      {
+        "name": "grill-me"
+      },
+      {
+        "name": "improve-codebase-architecture"
+      }
+    ]
+  },
+  "opencode": {
+    "plugins": ["./plugins/git-worktree.ts", "./plugins/format-on-write.ts"]
+  }
+}

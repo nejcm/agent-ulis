@@ -1,0 +1,401 @@
+import { join } from "node:path";
+import type { ParsedAgent } from "../parsers/agent.js";
+import type { ParsedSkill } from "../parsers/skill.js";
+import type { McpConfig, PluginsConfig } from "../schema.js";
+import { translateEnvVar } from "../utils/env-var.js";
+import { cleanDir, copyDir, fileExists, readFile, writeFile } from "../utils/fs.js";
+import { log } from "../utils/logger.js";
+
+const MODEL_MAP: Record<string, string> = {
+  opus: "opus",
+  sonnet: "sonnet",
+  haiku: "haiku",
+};
+
+function buildSkillToolsList(t: {
+  read?: boolean;
+  write?: boolean;
+  edit?: boolean;
+  bash?: boolean;
+  search?: boolean;
+  browser?: boolean;
+  agent?: boolean | string[];
+}): string[] {
+  const tools: string[] = [];
+  if (t.read) tools.push("Read", "Glob", "Grep");
+  if (t.write) tools.push("Write");
+  if (t.edit) tools.push("Edit");
+  if (t.bash) tools.push("Bash");
+  if (t.search) tools.push("WebSearch", "WebFetch");
+  if (t.browser) tools.push("mcp__playwright__navigate", "mcp__playwright__screenshot");
+  if (t.agent === true) {
+    tools.push("Agent");
+  } else if (Array.isArray(t.agent)) {
+    tools.push(`Agent(${t.agent.join(", ")})`);
+  }
+  return tools;
+}
+
+function buildToolsList(agent: ParsedAgent): string[] {
+  const tools: string[] = [];
+  const { tools: t } = agent.frontmatter;
+  if (t.read) tools.push("Read", "Glob", "Grep");
+  if (t.write) tools.push("Write");
+  if (t.edit) tools.push("Edit");
+  if (t.bash) tools.push("Bash");
+  if (t.search) tools.push("WebSearch", "WebFetch");
+  if (t.browser) tools.push("mcp__playwright__navigate", "mcp__playwright__screenshot");
+  if (t.agent === true) {
+    tools.push("Agent");
+  } else if (Array.isArray(t.agent)) {
+    tools.push(`Agent(${t.agent.join(", ")})`);
+  }
+  return tools;
+}
+
+function generateSubagentFrontmatter(agent: ParsedAgent): string {
+  const { frontmatter: fm } = agent;
+  const claudePlatform = fm.platforms?.claude;
+  const lines: string[] = ["---"];
+
+  lines.push(`name: ${agent.name}`);
+  lines.push(`description: ${fm.description}`);
+
+  const model = MODEL_MAP[fm.model] ?? fm.model;
+  if (model && model !== "inherit") {
+    lines.push(`model: ${model}`);
+  }
+
+  const allowedTools = buildToolsList(agent);
+  const disallowedTools = claudePlatform?.disallowedTools ?? [];
+
+  if (allowedTools.length > 0) {
+    lines.push(`tools: ${allowedTools.join(", ")}`);
+  }
+  if (disallowedTools.length > 0) {
+    lines.push(`disallowedTools: ${disallowedTools.join(", ")}`);
+  }
+
+  if (claudePlatform?.permissionMode) {
+    lines.push(`permissionMode: ${claudePlatform.permissionMode}`);
+  }
+  if (fm.maxTurns !== undefined) {
+    lines.push(`maxTurns: ${fm.maxTurns}`);
+  }
+  if (fm.effort) {
+    lines.push(`effort: ${fm.effort}`);
+  }
+  if (fm.background) {
+    lines.push(`background: true`);
+  }
+  if (fm.isolation && fm.isolation !== "none") {
+    lines.push(`isolation: ${fm.isolation}`);
+  }
+  if (fm.memory && fm.memory !== "none") {
+    lines.push(`memory: ${fm.memory}`);
+  }
+  if (fm.skills && fm.skills.length > 0) {
+    lines.push(`skills:`);
+    for (const s of fm.skills) {
+      lines.push(`  - ${s}`);
+    }
+  }
+  if (fm.mcpServers && fm.mcpServers.length > 0) {
+    lines.push(`mcpServers:`);
+    for (const s of fm.mcpServers) {
+      lines.push(`  - ${s}`);
+    }
+  }
+  if (fm.hooks) {
+    lines.push(`hooks:`);
+    for (const [event, entries] of Object.entries(fm.hooks)) {
+      if (!entries || entries.length === 0) continue;
+      lines.push(`  ${event}:`);
+      for (const entry of entries as Array<{ matcher?: string; command: string }>) {
+        if (entry.matcher) {
+          lines.push(`    - matcher: "${entry.matcher}"`);
+          lines.push(`      hooks:`);
+          lines.push(`        - type: command`);
+          lines.push(`          command: "${entry.command}"`);
+        } else {
+          lines.push(`    - type: command`);
+          lines.push(`      command: "${entry.command}"`);
+        }
+      }
+    }
+  }
+  if (fm.color) {
+    lines.push(`color: ${fm.color}`);
+  }
+  if (claudePlatform?.initialPrompt) {
+    lines.push(`initialPrompt: ${claudePlatform.initialPrompt}`);
+  }
+
+  lines.push("---");
+  return lines.join("\n");
+}
+
+export function generateClaude(
+  agents: readonly ParsedAgent[],
+  skills: readonly ParsedSkill[],
+  mcp: McpConfig,
+  plugins: PluginsConfig,
+  aiDir: string,
+  outDir: string,
+): void {
+  cleanDir(outDir);
+  log.header("Claude Code");
+
+  // Generate agents orchestration table into rules/common/agents.md
+  const enabledAgents = agents.filter((a) => a.frontmatter.platforms?.claude?.enabled !== false);
+
+  const agentRows = enabledAgents.map(
+    (a) => `| ${a.name} | ${a.frontmatter.description} | ${a.frontmatter.model} |`,
+  );
+
+  const agentsRule = `# Agent Orchestration
+
+## Available Agents
+
+| Agent | Purpose | Model |
+|-------|---------|-------|
+${agentRows.join("\n")}
+
+## Immediate Agent Usage
+
+No user prompt needed:
+1. Complex feature requests - Use **planner** agent
+2. Code just written/modified - Use **reviewer** agent
+3. Bug fix or new feature - Use **tester** agent (TDD)
+4. Architectural decision - Use **architect** agent
+5. Security-sensitive changes - Use **security** agent
+
+## Parallel Task Execution
+
+ALWAYS use parallel execution for independent operations:
+- Launch multiple agents concurrently when tasks don't depend on each other
+- Example: Security analysis + Performance review + Code review in parallel
+
+## Multi-Perspective Analysis
+
+For complex problems, use split role sub-agents:
+- Factual reviewer
+- Senior engineer
+- Security expert
+- Consistency reviewer
+`;
+
+  writeFile(join(outDir, "rules", "common", "agents.md"), agentsRule);
+  log.success("rules/common/agents.md (generated)");
+
+  // Copy guardrails as a rule
+  const guardrailsSrc = join(aiDir, "guardrails.md");
+  if (fileExists(guardrailsSrc)) {
+    writeFile(join(outDir, "rules", "common", "guardrails.md"), readFile(guardrailsSrc));
+    log.success("rules/common/guardrails.md");
+  }
+
+  // Copy workflows as rules
+  const workflowsSrc = join(aiDir, "workflows");
+  if (fileExists(workflowsSrc)) {
+    copyDir(workflowsSrc, join(outDir, "rules", "workflows"));
+    log.success("rules/workflows/");
+  }
+
+  const rulesReadme = `# Rules
+
+Instruction files for Claude Code. The build writes this tree under \`generated/claude/\`; the install script can deploy it to \`~/.claude/rules/\`, where Claude Code loads Markdown rules.
+
+## What the build produces
+
+| Path | Source |
+|------|--------|
+| \`common/agents.md\` | Generated orchestration table from \`.ai/agents/*.md\` |
+| \`common/guardrails.md\` | Copied from \`.ai/guardrails.md\` when present |
+| \`workflows/\` | Copied from \`.ai/workflows/\` when present |
+
+There is no \`.ai/rules/\` directory in this repo. Add guidance via \`guardrails.md\`, workflows, or agent prompts, then run \`bun run build:claude\`.
+
+## File format
+
+Each rule is a Markdown file with optional YAML frontmatter (for example \`paths\` globs to scope when Claude applies the rule). Rules without \`paths\` apply globally.
+
+Rules are **not** used by OpenCode, Codex, or Cursor — those tools use agents and MCP configs instead.
+`;
+  writeFile(join(outDir, "rules", "README.md"), rulesReadme);
+  log.success("rules/README.md");
+
+  // Copy commands (Claude Code native slash commands)
+  const commandsSrc = join(aiDir, "commands");
+  if (fileExists(commandsSrc)) {
+    copyDir(commandsSrc, join(outDir, "commands"));
+    log.success("commands/");
+  }
+
+  // Generate native Claude Code subagent files (YAML frontmatter + body)
+  let subagentCount = 0;
+  for (const agent of enabledAgents) {
+    const frontmatter = generateSubagentFrontmatter(agent);
+    const content = `${frontmatter}\n\n${agent.body.trim()}\n`;
+    writeFile(join(outDir, "agents", `${agent.name}.md`), content);
+    subagentCount++;
+  }
+  if (subagentCount > 0) {
+    log.success(`agents/ (${subagentCount} subagents generated)`);
+  }
+
+  // Also generate agent commands (slash commands) for backward compat
+  let agentCommandCount = 0;
+  for (const agent of enabledAgents) {
+    const model = MODEL_MAP[agent.frontmatter.model] ?? agent.frontmatter.model;
+    const allowedTools = buildToolsList(agent);
+
+    const frontmatterLines = [
+      "---",
+      `description: ${agent.frontmatter.description}`,
+      `model: ${model}`,
+    ];
+    if (allowedTools.length > 0) {
+      frontmatterLines.push(`allowed-tools: ${allowedTools.join(", ")}`);
+    }
+    frontmatterLines.push("---");
+
+    const commandContent = `${frontmatterLines.join("\n")}\n\n${agent.body}\n`;
+    writeFile(join(outDir, "commands", `${agent.name}.md`), commandContent);
+    agentCommandCount++;
+  }
+  if (agentCommandCount > 0) {
+    log.success(`commands/ (${agentCommandCount} agent commands generated)`);
+  }
+
+  // Generate skill commands from skills enabled for Claude
+  const enabledSkills = skills.filter((s) => s.frontmatter.platforms?.claude?.enabled !== false);
+  let skillCommandCount = 0;
+  for (const skill of enabledSkills) {
+    const fm = skill.frontmatter;
+    const skillName = fm.name ?? skill.name;
+    const claudePlatform = fm.platforms?.claude;
+
+    const lines: string[] = ["---"];
+    lines.push(`description: ${fm.description}`);
+
+    if (fm.model && fm.model !== "inherit") {
+      lines.push(`model: ${fm.model}`);
+    }
+    if (fm.effort) {
+      lines.push(`effort: ${fm.effort}`);
+    }
+    if (fm.argumentHint) {
+      lines.push(`argument-hint: ${fm.argumentHint}`);
+    }
+    if (!fm.userInvocable) {
+      lines.push(`user-invocable: false`);
+    }
+    if (!fm.allowModelInvocation) {
+      lines.push(`disable-model-invocation: true`);
+    }
+    if (fm.tools) {
+      const toolList = buildSkillToolsList(fm.tools);
+      if (toolList.length > 0) {
+        lines.push(`allowed-tools: ${toolList.join(", ")}`);
+      }
+    }
+    if (fm.isolation === "fork") {
+      lines.push(`context: fork`);
+    }
+    if (claudePlatform?.shell) {
+      lines.push(`shell: ${claudePlatform.shell}`);
+    }
+    if (fm.paths) {
+      const pathList = Array.isArray(fm.paths) ? fm.paths : [fm.paths];
+      lines.push(`paths: ${pathList.join(", ")}`);
+    }
+    if (fm.hooks) {
+      lines.push(`hooks:`);
+      for (const [event, entries] of Object.entries(fm.hooks)) {
+        if (!entries || (entries as unknown[]).length === 0) continue;
+        lines.push(`  ${event}:`);
+        for (const entry of entries as Array<{ matcher?: string; command: string }>) {
+          if (entry.matcher) {
+            lines.push(`    - matcher: "${entry.matcher}"`);
+            lines.push(`      hooks:`);
+            lines.push(`        - type: command`);
+            lines.push(`          command: "${entry.command}"`);
+          } else {
+            lines.push(`    - type: command`);
+            lines.push(`      command: "${entry.command}"`);
+          }
+        }
+      }
+    }
+    lines.push("---");
+
+    const commandContent = `${lines.join("\n")}\n\n${skill.body}\n`;
+    writeFile(join(outDir, "commands", `${skillName}.md`), commandContent);
+    skillCommandCount++;
+  }
+  if (skillCommandCount > 0) {
+    log.success(`commands/ (${skillCommandCount} skill commands generated)`);
+  }
+
+  // Build MCP servers block
+  const mcpServers: Record<string, unknown> = {};
+  for (const [name, server] of Object.entries(mcp.servers)) {
+    if (!server.targets.includes("claude")) continue;
+
+    if (server.type === "local") {
+      const entry: Record<string, unknown> = {};
+      if (server.command) entry.command = server.command;
+      if (server.args) entry.args = server.args;
+      if (server.env) {
+        const env: Record<string, string> = {};
+        for (const [k, v] of Object.entries(server.env)) {
+          env[k] = translateEnvVar(v, "claude");
+        }
+        entry.env = env;
+      }
+      mcpServers[name] = entry;
+      log.dim(`  mcp: ${name} (local)`);
+    } else if (server.url) {
+      const entry: Record<string, unknown> = { url: server.url };
+      if (server.headers) {
+        const headers: Record<string, string> = {};
+        for (const [k, v] of Object.entries(server.headers)) {
+          headers[k] = translateEnvVar(v, "claude");
+        }
+        entry.headers = headers;
+      }
+      mcpServers[name] = entry;
+      log.dim(`  mcp: ${name} (remote)`);
+    }
+  }
+
+  // Build settings.json
+  const enabledPlugins: Record<string, boolean> = {};
+  const extraKnownMarketplaces: Record<string, unknown> = {};
+
+  for (const plugin of plugins.claude.marketplace_plugins) {
+    if (plugin.source === "github" && plugin.repo) {
+      const key = `${plugin.name}@${plugin.name}`;
+      enabledPlugins[key] = true;
+      extraKnownMarketplaces[plugin.name] = {
+        source: { source: "github", repo: plugin.repo },
+      };
+    } else if (plugin.source === "official") {
+      enabledPlugins[`${plugin.name}@claude-plugins-official`] = true;
+    }
+  }
+
+  const settings: Record<string, unknown> = {
+    enabledPlugins,
+  };
+  if (Object.keys(extraKnownMarketplaces).length > 0) {
+    settings.extraKnownMarketplaces = extraKnownMarketplaces;
+  }
+  if (Object.keys(mcpServers).length > 0) {
+    settings.mcpServers = mcpServers;
+  }
+
+  writeFile(join(outDir, "settings.json"), JSON.stringify(settings, null, 2));
+  log.success("settings.json");
+}

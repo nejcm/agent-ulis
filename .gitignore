@@ -1,0 +1,24 @@
+# Build dependencies
+**/node_modules/
+**/dist/
+generated/
+
+# Personal Claude Code project data (machine-specific)
+.claude/
+
+# Backup files created by install scripts
+*.backup.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
