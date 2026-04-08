@@ -196,4 +196,11 @@ export function generateOpencode(
 
   // Empty settings.json
   writeFile(join(outDir, "settings.json"), "{}");
+
+  // Copy raw/common files (preserve subfolder structure)
+  const rawCommon = join(aiDir, "raw", "common");
+  if (fileExists(rawCommon)) {
+    copyDir(rawCommon, outDir);
+    log.success("raw/common/");
+  }
 }

@@ -4,7 +4,7 @@ import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig } from "../schema.js";
 import type { BuildConfig } from "../config.js";
-import { writeFile, cleanDir, fileExists, readFile } from "../utils/fs.js";
+import { writeFile, cleanDir, copyDir, fileExists, readFile } from "../utils/fs.js";
 import { translateEnvVar } from "../utils/env-var.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor } from "../utils/mcp-block.js";
@@ -269,4 +269,11 @@ export function generateCodex(
 
   writeFile(join(outDir, "AGENTS.md"), agentsSections.join("\n"));
   log.success(`AGENTS.md (${enabledAgents.length} agents)`);
+
+  // Copy raw/common files (preserve subfolder structure)
+  const rawCommon = join(aiDir, "raw", "common");
+  if (fileExists(rawCommon)) {
+    copyDir(rawCommon, outDir);
+    log.success("raw/common/");
+  }
 }

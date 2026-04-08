@@ -3,7 +3,7 @@ import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig } from "../schema.js";
 import type { BuildConfig } from "../config.js";
-import { writeFile, cleanDir, copySkillDirs } from "../utils/fs.js";
+import { writeFile, cleanDir, copySkillDirs, copyDir, fileExists } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
@@ -13,6 +13,7 @@ export function generateCursor(
   agents: readonly ParsedAgent[],
   skills: readonly ParsedSkill[],
   mcp: McpConfig,
+  aiDir: string,
   outDir: string,
   cfg: BuildConfig,
 ): void {
@@ -86,4 +87,11 @@ export function generateCursor(
   const output = { mcpServers };
   writeFile(join(outDir, "mcp.json"), JSON.stringify(output, null, 2));
   log.success("mcp.json");
+
+  // Copy raw/common files (preserve subfolder structure)
+  const rawCommon = join(aiDir, "raw", "common");
+  if (fileExists(rawCommon)) {
+    copyDir(rawCommon, outDir);
+    log.success("raw/common/");
+  }
 }

@@ -82,7 +82,7 @@ for (const target of activeTargets) {
       generateCodex(agents, skills, mcp, aiDir, outDir, buildConfig);
       break;
     case "cursor":
-      generateCursor(agents, skills, mcp, outDir, buildConfig);
+      generateCursor(agents, skills, mcp, aiDir, outDir, buildConfig);
       break;
   }
 }

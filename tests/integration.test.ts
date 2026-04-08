@@ -40,7 +40,7 @@ beforeAll(() => {
   generateClaude(agents, skills, mcp, plugins, fixturesDir, join(outDir, "claude"), BUILD_CONFIG);
   generateOpencode(agents, skills, mcp, plugins, fixturesDir, join(outDir, "opencode"), BUILD_CONFIG);
   generateCodex(agents, skills, mcp, fixturesDir, join(outDir, "codex"), BUILD_CONFIG);
-  generateCursor(agents, skills, mcp, join(outDir, "cursor"), BUILD_CONFIG);
+  generateCursor(agents, skills, mcp, fixturesDir, join(outDir, "cursor"), BUILD_CONFIG);
 });
 
 afterAll(() => {

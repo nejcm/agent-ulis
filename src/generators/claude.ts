@@ -383,4 +383,11 @@ Rules are **not** used by OpenCode, Codex, or Cursor — those tools use agents 
 
   writeFile(join(outDir, "settings.json"), JSON.stringify(settings, null, 2));
   log.success("settings.json");
+
+  // Copy raw/common files (preserve subfolder structure)
+  const rawCommon = join(aiDir, "raw", "common");
+  if (fileExists(rawCommon)) {
+    copyDir(rawCommon, outDir);
+    log.success("raw/common/");
+  }
 }
