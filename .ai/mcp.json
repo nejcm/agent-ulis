@@ -9,8 +9,7 @@
       "localFallback": {
         "command": "npx",
         "args": ["-y", "@upstash/context7-mcp", "--api-key", "${CONTEXT7_API_KEY}"]
-      },
-      "targets": ["opencode", "claude", "codex", "cursor"]
+      }
     },
     "github": {
       "type": "local",
@@ -18,25 +17,21 @@
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PAT}"
-      },
-      "targets": ["opencode", "claude", "codex"]
+      }
     },
     "gh_grep": {
       "type": "remote",
-      "url": "https://mcp.grep.app",
-      "targets": ["opencode", "claude"]
+      "url": "https://mcp.grep.app"
     },
     "memory": {
       "type": "local",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"],
-      "targets": ["opencode", "claude", "codex"]
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
     },
     "sequential-thinking": {
       "type": "local",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
-      "targets": ["opencode", "claude", "codex"]
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
     "linear": {
       "type": "remote",
@@ -44,7 +39,7 @@
       "headers": {
         "Authorization": "Bearer ${LINEAR_API_KEY}"
       },
-      "targets": []
+      "targets": ["opencode"]
     }
   }
 }
