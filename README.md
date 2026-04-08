@@ -39,6 +39,47 @@ CONTEXT7_API_KEY    Context7 API Key
 LINEAR_API_KEY      Linear API Key
 ```
 
+## MCP Configuration
+
+MCP servers are defined once in `.ai/mcp.json` and distributed per-platform using the `targets` field:
+
+| `targets` value          | Meaning                                                        |
+| ------------------------ | -------------------------------------------------------------- |
+| _omitted_                | Applies to **all** platforms (claude, opencode, codex, cursor) |
+| `["opencode", "claude"]` | Applies only to the listed platforms                           |
+| `[]` (empty array)       | **Disabled** — server is excluded from every platform          |
+
+Example — `github` applies everywhere, `linear` applies only to OpenCode:
+
+```json
+{
+  "servers": {
+    "github": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PAT}" }
+    },
+    "linear": {
+      "type": "remote",
+      "url": "https://mcp.linear.app/mcp",
+      "headers": { "Authorization": "Bearer ${LINEAR_API_KEY}" },
+      "targets": ["opencode"]
+    }
+  }
+}
+```
+
+Generators iterate servers via the shared `mcpServersFor(mcp, target)` helper in `src/utils/mcp-block.ts`, which centralizes the filter so every generator applies identical semantics.
+
+### Adding an MCP server
+
+1. Add an entry under `servers` in `.ai/mcp.json`.
+2. Omit `targets` if it should apply everywhere, or list specific platforms.
+3. Reference any secrets as `${ENV_VAR}` — never hardcode.
+4. For remote servers that Codex needs to access, provide a `localFallback` (Codex only supports local command-based MCPs).
+5. Run `bun run build` to regenerate all tool configs.
+
 ## Repository Structure
 
 ```

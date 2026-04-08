@@ -168,7 +168,13 @@ Skills become:
 
 ### 3.3 MCP Server
 
-Defined once in `.ai/mcp.json`. Each server declares a `targets` list so it only appears in the platforms that support it.
+Defined once in `.ai/mcp.json`. Each server may declare a `targets` list to restrict it to specific platforms.
+
+**Semantics:**
+
+- **Omitted `targets`** — server applies to every platform (the default).
+- **Populated array** (e.g. `["opencode"]`) — server applies only to the listed platforms.
+- **Empty array** `[]` — server is disabled (applies to no platforms).
 
 ```json
 {
@@ -177,8 +183,7 @@ Defined once in `.ai/mcp.json`. Each server declares a `targets` list so it only
       "type": "local",
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" },
-      "targets": ["claude", "opencode", "codex", "cursor"]
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
     },
     "context7": {
       "type": "remote",
@@ -186,8 +191,12 @@ Defined once in `.ai/mcp.json`. Each server declares a `targets` list so it only
       "localFallback": {
         "command": "npx",
         "args": ["-y", "@context7/mcp-server"]
-      },
-      "targets": ["claude", "opencode", "codex", "cursor"]
+      }
+    },
+    "linear": {
+      "type": "remote",
+      "url": "https://mcp.linear.app/mcp",
+      "targets": ["opencode"]
     }
   }
 }
