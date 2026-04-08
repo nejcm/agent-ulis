@@ -5,21 +5,26 @@
     "": {
       "name": "@nejcm/ai-config-build",
       "dependencies": {
+        "@cel-tui/core": "~0.4.1",
         "gray-matter": "~4.0.3",
         "zod": "~4.3.6",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.11",
+        "@types/bun": "~1.3.11",
         "@types/node": "~24.12.2",
         "oxfmt": "~0.43.0",
         "rimraf": "~6.1.3",
         "tsx": "~4.21.0",
         "typescript": "~5.9.3",
-        "zod-to-json-schema": "^3.25.2",
+        "zod-to-json-schema": "~3.25.2",
       },
     },
   },
   "packages": {
+    "@cel-tui/core": ["@cel-tui/core@0.4.1", "", { "dependencies": { "@cel-tui/types": "0.4.1", "get-east-asian-width": "^1.5.0" }, "peerDependencies": { "typescript": ">=5.0.0" } }, "sha512-OHEt+jyUTP2MpviEIU9g/cz5UN4nG3qy48ZsvBfNmuDg/eghjAZq2c7xV9UmdlGiojsG1AHJ4/1lnEgfhy0cVg=="],
+
+    "@cel-tui/types": ["@cel-tui/types@0.4.1", "", { "peerDependencies": { "typescript": ">=5.0.0" } }, "sha512-V8lLjWcdkiVVGtlX6h+NWqGVzPZLU7wcxXVs/KV51iP8IA5m5RcE7/zEVEQtKh760MVtGGcY5ETEicR3p/OK6Q=="],
+
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.7", "", { "os": "aix", "cpu": "ppc64" }, "sha512-EKX3Qwmhz1eMdEJokhALr0YiD0lhQNwDqkPYyPhiSwKrh7/4KRjQc04sZ8db+5DVVnZ1LmbNDI1uAMPEUBnQPg=="],
 
     "@esbuild/android-arm": ["@esbuild/android-arm@0.27.7", "", { "os": "android", "cpu": "arm" }, "sha512-jbPXvB4Yj2yBV7HUfE2KHe4GJX51QplCN1pGbYjvsyCZbQmies29EoJbkEc+vYuU5o45AfQn37vZlyXy4YJ8RQ=="],
@@ -129,6 +134,8 @@
     "extend-shallow": ["extend-shallow@2.0.1", "", { "dependencies": { "is-extendable": "^0.1.0" } }, "sha512-zCnTtlxNoAiDc3gqY2aYAWFx7XWWiasuF2K8Me5WbN8otHKTUKBwjPtNpRs/rbUZm7KxWAaNj7P1a/p52GbVug=="],
 
     "fsevents": ["fsevents@2.3.3", "", { "os": "darwin" }, "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw=="],
+
+    "get-east-asian-width": ["get-east-asian-width@1.5.0", "", {}, "sha512-CQ+bEO+Tva/qlmw24dCejulK5pMzVnUOFOijVogd3KQs07HnRIgp8TGipvCCRT06xeYEbpbgwaCxglFyiuIcmA=="],
 
     "get-tsconfig": ["get-tsconfig@4.13.7", "", { "dependencies": { "resolve-pkg-maps": "^1.0.0" } }, "sha512-7tN6rFgBlMgpBML5j8typ92BKFi2sFQvIdpAqLA2beia5avZDrMs0FLZiM5etShWq5irVyGcGMEA1jcDaK7A/Q=="],
 

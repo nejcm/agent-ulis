@@ -22,20 +22,22 @@
     "lint": "tsc --noEmit",
     "rebuild": "bun run build",
     "test:update": "bun test --update-snapshots",
-    "test": "bun test"
+    "test": "bun test",
+    "tui": "bun run src/tui.ts"
   },
   "dependencies": {
+    "@cel-tui/core": "~0.4.1",
     "gray-matter": "~4.0.3",
     "zod": "~4.3.6"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.11",
+    "@types/bun": "~1.3.11",
     "@types/node": "~24.12.2",
     "oxfmt": "~0.43.0",
     "rimraf": "~6.1.3",
     "tsx": "~4.21.0",
     "typescript": "~5.9.3",
-    "zod-to-json-schema": "^3.25.2"
+    "zod-to-json-schema": "~3.25.2"
   },
   "packageManager": "bun@1.3.10"
 }

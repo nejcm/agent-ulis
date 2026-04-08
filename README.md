@@ -24,12 +24,22 @@ Each tool uses a different config format, different MCP server syntax, different
 # 1. Install build dependencies (once)
 bun run install:deps
 
-# 2. Build all tool configs
-bun run build
+# 2. Launch the interactive TUI
+bun run tui
 
-# 3. Deploy to your home directory
+# 3. Or use the non-interactive flow
+bun run build
 bun run install:configs
 ```
+
+## Interactive TUI
+
+Run `bun run tui` to open a full-screen terminal UI powered by `cel-tui`.
+
+- Starts with a welcome screen and keyboard help
+- Lets you choose generation targets independently from install targets
+- Shows an optional backup toggle before execution
+- Streams live build/install progress in the same interface
 
 **Required environment variables** — set in your shell profile or copy `.env.example` to `.env`:
 
@@ -171,6 +181,7 @@ bun run install:configs    # Deploy to home directory
 bun run rebuild            # Force rebuild
 bun run format             # Format with [Oxfmt](https://oxc.rs/docs/guide/usage/formatter.html)
 bun run format:check       # Check formatting (CI-friendly)
+bun run tui                # Launch the interactive generator/install UI
 ```
 
 ## Install Behavior
@@ -182,7 +193,7 @@ bun run format:check       # Check formatting (CI-friendly)
 | Codex                | Overwrite        | `~/.codex/config.toml`    |
 | Cursor               | Merge (additive) | `~/.cursor/mcp.json`      |
 
-Existing configs are backed up before any overwrite (`*.backup.YYYYMMDD_HHMMSS`).
+When `--backup` is enabled, existing configs are backed up before overwrite (`*.backup.YYYYMMDD_HHMMSS`).
 
 ## Security
 
