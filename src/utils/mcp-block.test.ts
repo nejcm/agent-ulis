@@ -24,23 +24,47 @@ const mcp: McpConfig = {
       args: ["run", "mcp.ts"],
       targets: ["claude", "codex", "cursor"],
     },
+    universal: {
+      type: "local",
+      command: "bun",
+      args: ["run", "u.ts"],
+      // targets omitted → applies to every platform
+    },
+    disabled: {
+      type: "local",
+      command: "bun",
+      args: ["run", "d.ts"],
+      targets: [],
+    },
   },
 };
 
 describe("mcpServersFor", () => {
   it("yields only servers targeting the given platform", () => {
     const entries = [...mcpServersFor(mcp, "claude")];
-    expect(entries.map(([name]) => name)).toEqual(["local_tool", "multi_target"]);
+    expect(entries.map(([name]) => name)).toEqual(["local_tool", "multi_target", "universal"]);
   });
 
   it("yields remote server for cursor", () => {
     const entries = [...mcpServersFor(mcp, "cursor")];
-    expect(entries.map(([name]) => name)).toEqual(["remote_tool", "multi_target"]);
+    expect(entries.map(([name]) => name)).toEqual(["remote_tool", "multi_target", "universal"]);
   });
 
   it("yields nothing when no servers target the platform", () => {
     const entries = [...mcpServersFor(mcp, "opencode")];
-    expect(entries.map(([name]) => name)).toEqual(["local_tool"]);
+    expect(entries.map(([name]) => name)).toEqual(["local_tool", "universal"]);
+  });
+
+  it("treats omitted targets as applying to every platform", () => {
+    const entries = [...mcpServersFor(mcp, "anything")];
+    expect(entries.map(([name]) => name)).toEqual(["universal"]);
+  });
+
+  it("treats an empty targets array as disabled", () => {
+    for (const t of ["claude", "codex", "cursor", "opencode"]) {
+      const names = [...mcpServersFor(mcp, t)].map(([name]) => name);
+      expect(names).not.toContain("disabled");
+    }
   });
 
   it("yields the full server object", () => {

@@ -5,11 +5,14 @@ type EnvTarget = Parameters<typeof translateEnvVar>[1];
 
 /**
  * Iterate the MCP servers that target the given platform. Centralizes the
- * `targets.includes(target)` filter that every generator otherwise repeats.
+ * `targets` filter that every generator otherwise repeats.
+ *
+ * Semantics: an undefined `targets` field applies the server to every
+ * platform. An empty array disables the server (no targets).
  */
 export function* mcpServersFor(mcp: McpConfig, target: string): Generator<readonly [string, McpServer]> {
   for (const [name, server] of Object.entries(mcp.servers)) {
-    if (!server.targets.includes(target)) continue;
+    if (server.targets !== undefined && !server.targets.includes(target)) continue;
     yield [name, server] as const;
   }
 }

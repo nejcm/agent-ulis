@@ -140,7 +140,9 @@ export const McpServerSchema = z.object({
       args: z.array(z.string()),
     })
     .optional(),
-  targets: z.array(z.string()),
+  // Omit `targets` to apply this server to every target. Use an empty array
+  // to disable the server (apply to no targets).
+  targets: z.array(z.string()).optional(),
 });
 
 export const McpConfigSchema = z.object({
