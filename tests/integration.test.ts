@@ -12,12 +12,15 @@ import { join, resolve } from "node:path";
 import { mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { parseAgents } from "../src/parsers/agent.js";
 import { parseSkills } from "../src/parsers/skill.js";
-import { parseMcpConfig } from "../src/parsers/mcp.js";
-import { parsePluginsConfig } from "../src/parsers/plugins.js";
+import { McpConfigSchema, PluginsConfigSchema } from "../src/schema.js";
+import { readFile } from "../src/utils/fs.js";
 import { generateClaude } from "../src/generators/claude.js";
 import { generateOpencode } from "../src/generators/opencode.js";
 import { generateCodex } from "../src/generators/codex.js";
 import { generateCursor } from "../src/generators/cursor.js";
+import { BUILD_CONFIG } from "../src/config.js";
+import { validateCrossRefs } from "../src/validators/cross-refs.js";
+import { validateCollisions } from "../src/validators/collisions.js";
 
 const fixturesDir = resolve(join(import.meta.dirname, "fixtures"));
 const outDir = resolve(join(import.meta.dirname, ".tmp-test-output"));
@@ -31,13 +34,13 @@ beforeAll(() => {
 
   const agents = parseAgents(join(fixturesDir, "agents"));
   const skills = parseSkills(join(fixturesDir, "skills"));
-  const mcp = parseMcpConfig(join(fixturesDir, "mcp.json"));
-  const plugins = parsePluginsConfig(join(fixturesDir, "plugins.json"));
+  const mcp = McpConfigSchema.parse(JSON.parse(readFile(join(fixturesDir, "mcp.json"))));
+  const plugins = PluginsConfigSchema.parse(JSON.parse(readFile(join(fixturesDir, "plugins.json"))));
 
-  generateClaude(agents, skills, mcp, plugins, fixturesDir, join(outDir, "claude"));
-  generateOpencode(agents, skills, mcp, plugins, fixturesDir, join(outDir, "opencode"));
-  generateCodex(agents, skills, mcp, fixturesDir, join(outDir, "codex"));
-  generateCursor(agents, skills, mcp, join(outDir, "cursor"));
+  generateClaude(agents, skills, mcp, plugins, fixturesDir, join(outDir, "claude"), BUILD_CONFIG);
+  generateOpencode(agents, skills, mcp, plugins, fixturesDir, join(outDir, "opencode"), BUILD_CONFIG);
+  generateCodex(agents, skills, mcp, fixturesDir, join(outDir, "codex"), BUILD_CONFIG);
+  generateCursor(agents, skills, mcp, join(outDir, "cursor"), BUILD_CONFIG);
 });
 
 afterAll(() => {
@@ -160,5 +163,20 @@ describe("Cursor generator", () => {
     const mcp = JSON.parse(readOut("cursor", "mcp.json"));
     expect(mcp.mcpServers).toHaveProperty("test-local");
     expect(mcp.mcpServers).toHaveProperty("test-remote");
+  });
+});
+
+// ─── Validation pipeline ─────────────────────────────────────────────────────
+
+describe("Validation pipeline (real fixtures)", () => {
+  it("happy-path fixtures produce zero diagnostics", () => {
+    const agents = parseAgents(join(fixturesDir, "agents"));
+    const skills = parseSkills(join(fixturesDir, "skills"));
+    const mcp = McpConfigSchema.parse(JSON.parse(readFile(join(fixturesDir, "mcp.json"))));
+    const diags = [
+      ...validateCrossRefs(agents, skills, mcp),
+      ...validateCollisions(agents, skills),
+    ];
+    expect(diags).toEqual([]);
   });
 });

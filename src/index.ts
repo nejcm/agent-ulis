@@ -1,12 +1,15 @@
 import { join, resolve } from "node:path";
 import { parseAgents } from "./parsers/agent.js";
 import { parseSkills } from "./parsers/skill.js";
-import { parseMcpConfig } from "./parsers/mcp.js";
-import { parsePluginsConfig } from "./parsers/plugins.js";
+import { McpConfigSchema, PluginsConfigSchema } from "./schema.js";
 import { generateOpencode } from "./generators/opencode.js";
 import { generateClaude } from "./generators/claude.js";
 import { generateCodex } from "./generators/codex.js";
 import { generateCursor } from "./generators/cursor.js";
+import { loadBuildConfig } from "./utils/build-config.js";
+import { readFile } from "./utils/fs.js";
+import { validateCrossRefs, type Diagnostic } from "./validators/cross-refs.js";
+import { validateCollisions } from "./validators/collisions.js";
 import { log } from "./utils/logger.js";
 
 const args = process.argv.slice(2);
@@ -30,11 +33,37 @@ log.success(`Parsed ${agents.length} agents`);
 const skills = parseSkills(join(aiDir, "skills"));
 log.success(`Parsed ${skills.length} skills`);
 
-const mcp = parseMcpConfig(join(aiDir, "mcp.json"));
+const mcp = McpConfigSchema.parse(JSON.parse(readFile(join(aiDir, "mcp.json"))));
 log.success(`Parsed ${Object.keys(mcp.servers).length} MCP servers`);
 
-const plugins = parsePluginsConfig(join(aiDir, "plugins.json"));
+const plugins = PluginsConfigSchema.parse(JSON.parse(readFile(join(aiDir, "plugins.json"))));
 log.success(`Parsed plugins config`);
+
+const buildConfig = loadBuildConfig(aiDir);
+log.success(`Loaded build config`);
+
+// Validate the bundle before touching the filesystem.
+log.header("Validation");
+
+const diagnostics: readonly Diagnostic[] = [
+  ...validateCrossRefs(agents, skills, mcp),
+  ...validateCollisions(agents, skills),
+];
+
+for (const d of diagnostics) {
+  const line = `[${d.entity}] ${d.message}${d.suggestion ? ` — ${d.suggestion}` : ""}`;
+  if (d.level === "error") log.error(line);
+  else log.warn(line);
+}
+
+const errorCount = diagnostics.filter((d) => d.level === "error").length;
+const warnCount = diagnostics.length - errorCount;
+
+if (errorCount > 0) {
+  log.error(`Validation failed: ${errorCount} error(s), ${warnCount} warning(s). No files written.`);
+  process.exit(1);
+}
+log.success(`Validation passed (${warnCount} warning(s))`);
 
 // Generate per-tool configs
 const targets = ["opencode", "claude", "codex", "cursor"];
@@ -44,16 +73,16 @@ for (const target of activeTargets) {
   const outDir = join(generatedDir, target);
   switch (target) {
     case "opencode":
-      generateOpencode(agents, skills, mcp, plugins, aiDir, outDir);
+      generateOpencode(agents, skills, mcp, plugins, aiDir, outDir, buildConfig);
       break;
     case "claude":
-      generateClaude(agents, skills, mcp, plugins, aiDir, outDir);
+      generateClaude(agents, skills, mcp, plugins, aiDir, outDir, buildConfig);
       break;
     case "codex":
-      generateCodex(agents, skills, mcp, aiDir, outDir);
+      generateCodex(agents, skills, mcp, aiDir, outDir, buildConfig);
       break;
     case "cursor":
-      generateCursor(agents, skills, mcp, outDir);
+      generateCursor(agents, skills, mcp, outDir, buildConfig);
       break;
   }
 }

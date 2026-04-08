@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync, readFileSync, existsSync, cpSync, rmSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 
 export function ensureDir(dirPath: string): void {
   mkdirSync(dirPath, { recursive: true });
@@ -28,4 +28,18 @@ export function cleanDir(dirPath: string): void {
     rmSync(dirPath, { recursive: true, force: true });
   }
   ensureDir(dirPath);
+}
+
+/**
+ * Copy each skill's source directory into `outSkillsDir/<skill.name>`.
+ * Used by generators that emit Agent Skills as plain directory copies
+ * (OpenCode, Cursor).
+ */
+export function copySkillDirs(
+  skills: ReadonlyArray<{ readonly name: string; readonly dir: string }>,
+  outSkillsDir: string,
+): void {
+  for (const skill of skills) {
+    copyDir(skill.dir, join(outSkillsDir, skill.name));
+  }
 }

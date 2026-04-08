@@ -1,12 +1,13 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import type { ParsedAgent } from "../parsers/agent.js";
-import type { ParsedSkill } from "../parsers/skill.js";
+import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig } from "../schema.js";
-import { BUILD_CONFIG } from "../config.js";
+import type { BuildConfig } from "../config.js";
 import { writeFile, cleanDir, fileExists, readFile } from "../utils/fs.js";
 import { translateEnvVar } from "../utils/env-var.js";
 import { log } from "../utils/logger.js";
+import { mcpServersFor } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
 
 export function generateCodex(
@@ -15,11 +16,14 @@ export function generateCodex(
   mcp: McpConfig,
   aiDir: string,
   outDir: string,
+  buildConfig: BuildConfig,
 ): void {
   cleanDir(outDir);
   log.header("Codex");
 
-  const cfg = BUILD_CONFIG.codex;
+  const cfg = buildConfig.platforms.codex;
+  const enabledAgents = enabledAgentsFor(agents, "codex");
+  const enabledSkills = enabledSkillsFor(skills, "codex");
   const lines: string[] = [];
 
   // Top-level config
@@ -37,11 +41,8 @@ export function generateCodex(
     lines.push("");
   }
 
-  // MCP servers
-  for (const [name, server] of Object.entries(mcp.servers)) {
-    if (!server.targets.includes("codex")) continue;
-
-    // Codex only supports local command-based MCP
+  // MCP servers (Codex only supports local; remote falls back to localFallback)
+  for (const [name, server] of mcpServersFor(mcp, "codex")) {
     if (server.type === "local") {
       lines.push(`[mcp_servers.${name}]`);
       if (server.command) {
@@ -51,7 +52,7 @@ export function generateCodex(
         const args = server.args.map((a) => `"${translateEnvVar(a, "codex")}"`).join(", ");
         lines.push(`args = [${args}]`);
       }
-      lines.push(`startup_timeout_sec = 20`);
+      lines.push(`startup_timeout_sec = ${cfg.mcpStartupTimeoutSec}`);
       if (server.env) {
         lines.push("");
         lines.push(`[mcp_servers.${name}.env]`);
@@ -69,7 +70,7 @@ export function generateCodex(
         .map((a) => `"${translateEnvVar(a, "codex")}"`)
         .join(", ");
       lines.push(`args = [${args}]`);
-      lines.push(`startup_timeout_sec = 20`);
+      lines.push(`startup_timeout_sec = ${cfg.mcpStartupTimeoutSec}`);
       lines.push("");
       log.dim(`  mcp: ${name} (remote->localFallback)`);
     } else {
@@ -88,9 +89,7 @@ export function generateCodex(
     max: "max",
   };
 
-  for (const agent of agents) {
-    if (agent.frontmatter.platforms?.codex?.enabled === false) continue;
-
+  for (const agent of enabledAgents) {
     const codexPlatform = agent.frontmatter.platforms?.codex;
     const agentLines: string[] = [];
 
@@ -135,7 +134,6 @@ export function generateCodex(
   log.success("agents/ (per-agent TOML files)");
 
   // Generate skill files
-  const enabledSkills = skills.filter((s) => s.frontmatter.platforms?.codex?.enabled !== false);
   for (const skill of enabledSkills) {
     const skillName = skill.frontmatter.name ?? skill.name;
     const fm = skill.frontmatter;
@@ -210,8 +208,7 @@ export function generateCodex(
   // Generate AGENTS.md with agent instructions
   const agentsSections: string[] = [];
 
-  // Agent orchestration table
-  const includedAgents = agents.filter((a) => a.frontmatter.platforms?.codex?.enabled !== false);
+  // Agent orchestration table (reuse enabledAgents computed earlier)
 
   agentsSections.push("# Agent Instructions");
   agentsSections.push("");
@@ -219,7 +216,7 @@ export function generateCodex(
   agentsSections.push("");
   agentsSections.push("| Agent | Purpose | Model |");
   agentsSections.push("|-------|---------|-------|");
-  for (const agent of includedAgents) {
+  for (const agent of enabledAgents) {
     agentsSections.push(
       `| ${agent.name} | ${agent.frontmatter.description} | ${agent.frontmatter.model} |`,
     );
@@ -239,7 +236,7 @@ export function generateCodex(
   }
 
   // Individual agent instructions
-  for (const agent of includedAgents) {
+  for (const agent of enabledAgents) {
     agentsSections.push(`---`);
     agentsSections.push("");
     agentsSections.push(agent.body);
@@ -271,5 +268,5 @@ export function generateCodex(
   }
 
   writeFile(join(outDir, "AGENTS.md"), agentsSections.join("\n"));
-  log.success(`AGENTS.md (${includedAgents.length} agents)`);
+  log.success(`AGENTS.md (${enabledAgents.length} agents)`);
 }

@@ -1,60 +1,15 @@
 import { join } from "node:path";
-import type { ParsedAgent } from "../parsers/agent.js";
-import type { ParsedSkill } from "../parsers/skill.js";
-import type { McpConfig, PluginsConfig } from "../schema.js";
-import { translateEnvVar } from "../utils/env-var.js";
+import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
+import type { McpConfig, PluginsConfig, ToolPermissions } from "../schema.js";
+import type { BuildConfig } from "../config.js";
 import { cleanDir, copyDir, fileExists, readFile, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
+import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
+import { mapTools } from "../utils/tool-mapper.js";
 
-const MODEL_MAP: Record<string, string> = {
-  opus: "opus",
-  sonnet: "sonnet",
-  haiku: "haiku",
-};
-
-function buildSkillToolsList(t: {
-  read?: boolean;
-  write?: boolean;
-  edit?: boolean;
-  bash?: boolean;
-  search?: boolean;
-  browser?: boolean;
-  agent?: boolean | string[];
-}): string[] {
-  const tools: string[] = [];
-  if (t.read) tools.push("Read", "Glob", "Grep");
-  if (t.write) tools.push("Write");
-  if (t.edit) tools.push("Edit");
-  if (t.bash) tools.push("Bash");
-  if (t.search) tools.push("WebSearch", "WebFetch");
-  if (t.browser) tools.push("mcp__playwright__navigate", "mcp__playwright__screenshot");
-  if (t.agent === true) {
-    tools.push("Agent");
-  } else if (Array.isArray(t.agent)) {
-    tools.push(`Agent(${t.agent.join(", ")})`);
-  }
-  return tools;
-}
-
-function buildToolsList(agent: ParsedAgent): string[] {
-  const tools: string[] = [];
-  const { tools: t } = agent.frontmatter;
-  if (t.read) tools.push("Read", "Glob", "Grep");
-  if (t.write) tools.push("Write");
-  if (t.edit) tools.push("Edit");
-  if (t.bash) tools.push("Bash");
-  if (t.search) tools.push("WebSearch", "WebFetch");
-  if (t.browser) tools.push("mcp__playwright__navigate", "mcp__playwright__screenshot");
-  if (t.agent === true) {
-    tools.push("Agent");
-  } else if (Array.isArray(t.agent)) {
-    tools.push(`Agent(${t.agent.join(", ")})`);
-  }
-  return tools;
-}
-
-function generateSubagentFrontmatter(agent: ParsedAgent): string {
+function generateSubagentFrontmatter(agent: ParsedAgent, cfg: BuildConfig): string {
   const { frontmatter: fm } = agent;
   const claudePlatform = fm.platforms?.claude;
   const lines: string[] = ["---"];
@@ -62,12 +17,12 @@ function generateSubagentFrontmatter(agent: ParsedAgent): string {
   lines.push(`name: ${agent.name}`);
   lines.push(`description: ${fm.description}`);
 
-  const model = MODEL_MAP[fm.model] ?? fm.model;
+  const model = cfg.platforms.claude.modelMap[fm.model] ?? fm.model;
   if (model && model !== "inherit") {
     lines.push(`model: ${model}`);
   }
 
-  const allowedTools = buildToolsList(agent);
+  const allowedTools = mapTools(fm.tools, "claude", cfg);
 
   // security.permissionLevel "readonly" → plan mode (read-only); toolPolicy.avoid → disallowedTools
   const disallowedTools = [
@@ -176,12 +131,13 @@ export function generateClaude(
   plugins: PluginsConfig,
   aiDir: string,
   outDir: string,
+  cfg: BuildConfig,
 ): void {
   cleanDir(outDir);
   log.header("Claude Code");
 
   // Generate agents orchestration table into rules/common/agents.md
-  const enabledAgents = agents.filter((a) => a.frontmatter.platforms?.claude?.enabled !== false);
+  const enabledAgents = enabledAgentsFor(agents, "claude");
 
   const agentRows = enabledAgents.map(
     (a) => `| ${a.name} | ${a.frontmatter.description} | ${a.frontmatter.model} |`,
@@ -269,7 +225,7 @@ Rules are **not** used by OpenCode, Codex, or Cursor — those tools use agents 
   // Generate native Claude Code subagent files (YAML frontmatter + body)
   let subagentCount = 0;
   for (const agent of enabledAgents) {
-    const frontmatter = generateSubagentFrontmatter(agent);
+    const frontmatter = generateSubagentFrontmatter(agent, cfg);
     const policyBlock = buildPolicyCommentBlock(agent.frontmatter, "md");
     const bodyWithPolicy = policyBlock
       ? `${policyBlock}\n${agent.body.trim()}`
@@ -288,8 +244,8 @@ Rules are **not** used by OpenCode, Codex, or Cursor — those tools use agents 
   // Also generate agent commands (slash commands) for backward compat
   let agentCommandCount = 0;
   for (const agent of enabledAgents) {
-    const model = MODEL_MAP[agent.frontmatter.model] ?? agent.frontmatter.model;
-    const allowedTools = buildToolsList(agent);
+    const model = cfg.platforms.claude.modelMap[agent.frontmatter.model] ?? agent.frontmatter.model;
+    const allowedTools = mapTools(agent.frontmatter.tools, "claude", cfg);
 
     const frontmatterLines = [
       "---",
@@ -310,7 +266,7 @@ Rules are **not** used by OpenCode, Codex, or Cursor — those tools use agents 
   }
 
   // Generate skill commands from skills enabled for Claude
-  const enabledSkills = skills.filter((s) => s.frontmatter.platforms?.claude?.enabled !== false);
+  const enabledSkills = enabledSkillsFor(skills, "claude");
   let skillCommandCount = 0;
   for (const skill of enabledSkills) {
     const fm = skill.frontmatter;
@@ -336,7 +292,7 @@ Rules are **not** used by OpenCode, Codex, or Cursor — those tools use agents 
       lines.push(`disable-model-invocation: true`);
     }
     if (fm.tools) {
-      const toolList = buildSkillToolsList(fm.tools);
+      const toolList = mapTools(fm.tools as ToolPermissions, "claude", cfg);
       if (toolList.length > 0) {
         lines.push(`allowed-tools: ${toolList.join(", ")}`);
       }
@@ -381,31 +337,19 @@ Rules are **not** used by OpenCode, Codex, or Cursor — those tools use agents 
 
   // Build MCP servers block
   const mcpServers: Record<string, unknown> = {};
-  for (const [name, server] of Object.entries(mcp.servers)) {
-    if (!server.targets.includes("claude")) continue;
-
+  for (const [name, server] of mcpServersFor(mcp, "claude")) {
     if (server.type === "local") {
       const entry: Record<string, unknown> = {};
       if (server.command) entry.command = server.command;
       if (server.args) entry.args = server.args;
-      if (server.env) {
-        const env: Record<string, string> = {};
-        for (const [k, v] of Object.entries(server.env)) {
-          env[k] = translateEnvVar(v, "claude");
-        }
-        entry.env = env;
-      }
+      const env = translateEnvMap(server.env, "claude");
+      if (env) entry.env = env;
       mcpServers[name] = entry;
       log.dim(`  mcp: ${name} (local)`);
     } else if (server.url) {
       const entry: Record<string, unknown> = { url: server.url };
-      if (server.headers) {
-        const headers: Record<string, string> = {};
-        for (const [k, v] of Object.entries(server.headers)) {
-          headers[k] = translateEnvVar(v, "claude");
-        }
-        entry.headers = headers;
-      }
+      const headers = translateEnvMap(server.headers, "claude");
+      if (headers) entry.headers = headers;
       mcpServers[name] = entry;
       log.dim(`  mcp: ${name} (remote)`);
     }

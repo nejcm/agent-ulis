@@ -1,0 +1,86 @@
+import type { ParsedAgent } from "../parsers/agent.js";
+import type { ParsedSkill } from "../parsers/skill.js";
+import type { McpConfig } from "../schema.js";
+
+/**
+ * Common diagnostic shape returned by every validator. The orchestrator in
+ * `src/index.ts` collects diagnostics from all validators, prints warnings,
+ * and aborts the build with exit code 1 if any errors were emitted.
+ */
+export interface Diagnostic {
+  readonly level: "error" | "warning";
+  readonly entity: string;
+  readonly message: string;
+  readonly suggestion?: string;
+}
+
+/**
+ * Validate cross-entity references in the parsed bundle.
+ *
+ * Ported from `ai-configs_2/src/validators/cross-refs.ts` lines 14-57; the
+ * pipeline and command checks were dropped because those entities do not
+ * exist in this codebase.
+ *
+ * Checks:
+ *   - agent.skills[]   → must reference a parsed skill   (warning)
+ *   - agent.mcpServers → must reference an mcp.json key  (error)
+ *   - tools.agent: []  → must reference a parsed agent   (warning)
+ */
+export function validateCrossRefs(
+  agents: readonly ParsedAgent[],
+  skills: readonly ParsedSkill[],
+  mcp: McpConfig,
+): readonly Diagnostic[] {
+  const diags: Diagnostic[] = [];
+
+  const agentNames = new Set(agents.map((a) => a.name));
+  const skillNames = new Set(skills.map((s) => s.name));
+  const mcpServerNames = new Set(Object.keys(mcp.servers));
+
+  for (const agent of agents) {
+    // 1. Skill references (warning — skill may be platform-installed elsewhere)
+    if (agent.frontmatter.skills) {
+      for (const skillRef of agent.frontmatter.skills) {
+        if (!skillNames.has(skillRef)) {
+          diags.push({
+            level: "warning",
+            entity: `agent:${agent.name}`,
+            message: `References skill "${skillRef}" which is not defined in .ai/skills/`,
+            suggestion: `Create .ai/skills/${skillRef}/SKILL.md or remove the reference`,
+          });
+        }
+      }
+    }
+
+    // 2. MCP server references (error — output config will be broken)
+    if (agent.frontmatter.mcpServers) {
+      for (const mcpRef of agent.frontmatter.mcpServers) {
+        if (!mcpServerNames.has(mcpRef)) {
+          diags.push({
+            level: "error",
+            entity: `agent:${agent.name}`,
+            message: `References MCP server "${mcpRef}" which is not defined in .ai/mcp.json`,
+            suggestion: `Add "${mcpRef}" to .ai/mcp.json or remove the reference`,
+          });
+        }
+      }
+    }
+
+    // 3. Subagent allowlist (warning — Claude will silently ignore unknown names)
+    const agentTool = agent.frontmatter.tools.agent;
+    if (Array.isArray(agentTool)) {
+      for (const subagentRef of agentTool) {
+        if (!agentNames.has(subagentRef)) {
+          diags.push({
+            level: "warning",
+            entity: `agent:${agent.name}`,
+            message: `Subagent allowlist references "${subagentRef}" which is not defined in .ai/agents/`,
+            suggestion: `Create .ai/agents/${subagentRef}.md or remove from allowlist`,
+          });
+        }
+      }
+    }
+  }
+
+  return diags;
+}

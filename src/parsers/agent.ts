@@ -10,6 +10,16 @@ export interface ParsedAgent {
   body: string;
 }
 
+export type AgentPlatform = "claude" | "opencode" | "codex" | "cursor";
+
+/** Filter agents that are not explicitly disabled for the given platform. */
+export function enabledAgentsFor(
+  agents: readonly ParsedAgent[],
+  platform: AgentPlatform,
+): readonly ParsedAgent[] {
+  return agents.filter((a) => a.frontmatter.platforms?.[platform]?.enabled !== false);
+}
+
 export function parseAgents(agentsDir: string): readonly ParsedAgent[] {
   const files = readdirSync(agentsDir).filter(
     (f) => f.endsWith(".md") && f.toLowerCase() !== "readme.md",

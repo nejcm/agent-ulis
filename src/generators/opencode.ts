@@ -1,13 +1,11 @@
 import { join } from "node:path";
-import type { ParsedAgent } from "../parsers/agent.js";
-import type { ParsedSkill } from "../parsers/skill.js";
-import type { McpConfig } from "../schema.js";
-import type { PluginsConfig } from "../schema.js";
-import { BUILD_CONFIG } from "../config.js";
-import { writeFile, copyDir, cleanDir, fileExists } from "../utils/fs.js";
-import { translateEnvVar } from "../utils/env-var.js";
-import { readFile } from "../utils/fs.js";
+import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
+import type { McpConfig, PluginsConfig } from "../schema.js";
+import type { BuildConfig } from "../config.js";
+import { writeFile, copyDir, cleanDir, copySkillDirs, fileExists, readFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
+import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
 
 export function generateOpencode(
@@ -17,17 +15,18 @@ export function generateOpencode(
   plugins: PluginsConfig,
   aiDir: string,
   outDir: string,
+  buildConfig: BuildConfig,
 ): void {
   cleanDir(outDir);
   log.header("OpenCode");
 
-  const config = BUILD_CONFIG.opencode;
+  const config = buildConfig.platforms.opencode;
+  const enabledAgents = enabledAgentsFor(agents, "opencode");
+  const enabledSkills = enabledSkillsFor(skills, "opencode");
 
   // Build agent block
   const agentBlock: Record<string, unknown> = {};
-  for (const agent of agents) {
-    if (agent.frontmatter.platforms?.opencode?.enabled === false) continue;
-
+  for (const agent of enabledAgents) {
     const ocName = config.agentNameMap[agent.name] ?? agent.name;
     const ocModel = config.modelMap[agent.frontmatter.model] ?? agent.frontmatter.model;
     const ocPlatform = agent.frontmatter.platforms?.opencode;
@@ -88,60 +87,40 @@ export function generateOpencode(
 
   // Build MCP block
   const mcpBlock: Record<string, unknown> = {};
-  for (const [name, server] of Object.entries(mcp.servers)) {
-    if (!server.targets.includes("opencode")) continue;
-
+  for (const [name, server] of mcpServersFor(mcp, "opencode")) {
     if (server.type === "local") {
       const entry: Record<string, unknown> = {
         type: "local",
         enabled: true,
         command: server.command ? [server.command, ...(server.args ?? [])] : undefined,
       };
-      if (server.env) {
-        const env: Record<string, string> = {};
-        for (const [k, v] of Object.entries(server.env)) {
-          env[k] = translateEnvVar(v, "opencode_env");
-        }
-        entry.environment = env;
-      }
+      const environment = translateEnvMap(server.env, "opencode_env");
+      if (environment) entry.environment = environment;
       mcpBlock[name] = entry;
     } else {
       const entry: Record<string, unknown> = {
         type: "remote",
         url: server.url,
       };
-      if (server.headers) {
-        const headers: Record<string, string> = {};
-        for (const [k, v] of Object.entries(server.headers)) {
-          headers[k] = translateEnvVar(v, "opencode_header");
-        }
-        entry.headers = headers;
-      }
+      const headers = translateEnvMap(server.headers, "opencode_header");
+      if (headers) entry.headers = headers;
       mcpBlock[name] = entry;
     }
     log.dim(`  mcp: ${name} (${server.type})`);
   }
 
-  // Build permission block (from guardrails - static for now)
-  const permissionBlock = {
-    skill: { "*": "ask", "read-*": "allow", "search-*": "allow", "internal-*": "deny" },
-    bash: {
-      "*": "ask",
-      "bq query*": "allow",
-      "bun run build:*": "allow",
-      "bun run lint:file:*": "allow",
-      "bun run test:*": "allow",
-      "bun run test:file:*": "allow",
-      "bun run typecheck:*": "allow",
-      "bun test:*": "allow",
-      "cc:*": "allow",
-      "comm:*": "allow",
-      "find*": "allow",
-    },
-    tool: { bash: "ask", write: "ask", edit: "ask", read: "allow" },
-    read: { "C:/Work/Personal/dotfiles/.opencode/get-shit-done/*": "allow" },
-    external_directory: { "C:/Work/Personal/dotfiles/.opencode/get-shit-done/*": "allow" },
+  // Build permission block from BUILD_CONFIG (overridable via .ai/build.config.json)
+  const permissionBlock: Record<string, unknown> = {
+    skill: config.skillAllowlist,
+    bash: config.bashAllowlist,
+    tool: config.toolPermissions,
   };
+  if (Object.keys(config.readAllowlist).length > 0) {
+    permissionBlock.read = config.readAllowlist;
+  }
+  if (Object.keys(config.externalDirectoryAllowlist).length > 0) {
+    permissionBlock.external_directory = config.externalDirectoryAllowlist;
+  }
 
   // Assemble opencode.json
   const opencodeJson = {
@@ -160,8 +139,7 @@ export function generateOpencode(
   // Copy agent markdown bodies, prepending policy comment block for non-native fields
   const agentsCoreDir = join(outDir, "agents", "core");
   const agentsSpecDir = join(outDir, "agents", "specialized");
-  for (const agent of agents) {
-    if (agent.frontmatter.platforms?.opencode?.enabled === false) continue;
+  for (const agent of enabledAgents) {
     const ocName = config.agentNameMap[agent.name] ?? agent.name;
     const isCore = agent.frontmatter.tags.includes("core");
     const destDir = isCore ? agentsCoreDir : agentsSpecDir;
@@ -182,14 +160,9 @@ export function generateOpencode(
   log.success("agents/");
 
   // Copy skill directories filtered by OpenCode platform enablement
-  const enabledSkills = skills.filter((s) => s.frontmatter.platforms?.opencode?.enabled !== false);
-  let skillCount = 0;
-  for (const skill of enabledSkills) {
-    copyDir(skill.dir, join(outDir, "skills", skill.name));
-    skillCount++;
-  }
-  if (skillCount > 0) {
-    log.success(`skills/ (${skillCount} skills)`);
+  copySkillDirs(enabledSkills, join(outDir, "skills"));
+  if (enabledSkills.length > 0) {
+    log.success(`skills/ (${enabledSkills.length} skills)`);
   }
 
   // Copy directories if they exist

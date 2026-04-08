@@ -1,46 +1,33 @@
 import { join } from "node:path";
-import type { ParsedAgent } from "../parsers/agent.js";
-import type { ParsedSkill } from "../parsers/skill.js";
+import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig } from "../schema.js";
-import { writeFile, copyDir, cleanDir } from "../utils/fs.js";
-import { translateEnvVar } from "../utils/env-var.js";
+import type { BuildConfig } from "../config.js";
+import { writeFile, cleanDir, copySkillDirs } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
+import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
-
-const MODEL_MAP: Record<string, string> = {
-  opus: "claude-opus-4-6",
-  sonnet: "claude-sonnet-4-6",
-  haiku: "claude-haiku-4-5-20251001",
-};
-
-function buildCursorTools(agent: ParsedAgent): string[] {
-  const tools: string[] = [];
-  const { tools: t } = agent.frontmatter;
-  if (t.read) tools.push("read_file", "list_directory", "search_files");
-  if (t.write) tools.push("write_file");
-  if (t.edit) tools.push("edit_file");
-  if (t.bash) tools.push("run_terminal_command");
-  if (t.search) tools.push("web_search");
-  if (t.browser) tools.push("browser_action");
-  return tools;
-}
+import { mapTools } from "../utils/tool-mapper.js";
 
 export function generateCursor(
   agents: readonly ParsedAgent[],
   skills: readonly ParsedSkill[],
   mcp: McpConfig,
   outDir: string,
+  cfg: BuildConfig,
 ): void {
   cleanDir(outDir);
   log.header("Cursor");
 
+  const modelMap = cfg.platforms.cursor.modelMap;
+
   // Generate agent .mdc files
-  const enabledAgents = agents.filter((a) => a.frontmatter.platforms?.cursor?.enabled !== false);
+  const enabledAgents = enabledAgentsFor(agents, "cursor");
 
   for (const agent of enabledAgents) {
     const { frontmatter: fm } = agent;
-    const model = MODEL_MAP[fm.model] ?? fm.model;
-    const tools = buildCursorTools(agent);
+    const model = modelMap[fm.model] ?? fm.model;
+    const tools = mapTools(fm.tools, "cursor", cfg);
 
     const frontmatterLines = ["---"];
     frontmatterLines.push(`description: ${fm.description}`);
@@ -69,11 +56,8 @@ export function generateCursor(
   }
 
   // Copy skill directories for Cursor (follows Agent Skills open standard — same format as OpenCode)
-  const enabledSkills = skills.filter((s) => s.frontmatter.platforms?.cursor?.enabled !== false);
-  for (const skill of enabledSkills) {
-    copyDir(skill.dir, join(outDir, "skills", skill.name));
-    log.dim(`  skill: ${skill.name}`);
-  }
+  const enabledSkills = enabledSkillsFor(skills, "cursor");
+  copySkillDirs(enabledSkills, join(outDir, "skills"));
   if (enabledSkills.length > 0) {
     log.success(`skills/ (${enabledSkills.length} skills)`);
   }
@@ -81,18 +65,11 @@ export function generateCursor(
   // Generate mcp.json
   const mcpServers: Record<string, unknown> = {};
 
-  for (const [name, server] of Object.entries(mcp.servers)) {
-    if (!server.targets.includes("cursor")) continue;
-
+  for (const [name, server] of mcpServersFor(mcp, "cursor")) {
     if (server.type === "remote" && server.url) {
       const entry: Record<string, unknown> = { url: server.url };
-      if (server.headers) {
-        const headers: Record<string, string> = {};
-        for (const [k, v] of Object.entries(server.headers)) {
-          headers[k] = translateEnvVar(v, "cursor");
-        }
-        entry.headers = headers;
-      }
+      const headers = translateEnvMap(server.headers, "cursor");
+      if (headers) entry.headers = headers;
       mcpServers[name] = entry;
       log.dim(`  mcp: ${name} (remote)`);
     } else if (server.type === "local") {

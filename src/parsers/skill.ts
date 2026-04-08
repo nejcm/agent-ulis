@@ -11,6 +11,16 @@ export interface ParsedSkill {
   body: string; // SKILL.md content after frontmatter
 }
 
+export type SkillPlatform = "claude" | "opencode" | "codex" | "cursor";
+
+/** Filter skills that are not explicitly disabled for the given platform. */
+export function enabledSkillsFor(
+  skills: readonly ParsedSkill[],
+  platform: SkillPlatform,
+): readonly ParsedSkill[] {
+  return skills.filter((s) => s.frontmatter.platforms?.[platform]?.enabled !== false);
+}
+
 export function parseSkills(skillsDir: string): readonly ParsedSkill[] {
   if (!fileExists(skillsDir)) return [];
   const entries = readdirSync(skillsDir, { withFileTypes: true }).filter((d) => d.isDirectory());
