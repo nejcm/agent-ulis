@@ -14,13 +14,13 @@ Scripts can be invoked directly in a shell or referenced from LLM skills and wor
 
 ```bash
 # Check if API budget is within limits
-bash .ai/scripts/check-budget.sh
+bash .ai/global/scripts/check-budget.sh
 
 # Run full health check
-bash .ai/scripts/health-check.sh
+bash .ai/global/scripts/health-check.sh
 
 # Analyze costs for current session
-bash .ai/scripts/cost-analyzer.sh
+bash .ai/global/scripts/cost-analyzer.sh
 ```
 
 ## How It's Used
@@ -29,7 +29,7 @@ The build system copies `scripts/` directly into `generated/[PLATFORM]/scripts/`
 
 ## Adding a New Script
 
-1. Create `.ai/scripts/<name>.sh`
-2. Make it executable: `chmod +x .ai/scripts/<name>.sh`
+1. Create `.ai/global/scripts/<name>.sh`
+2. Make it executable: `chmod +x .ai/global/scripts/<name>.sh`
 3. Add a comment header describing what it does and any required env vars
 4. Run `bun run build` from the repo root — it will be included automatically

@@ -13,7 +13,7 @@ export type ToolPlatform = "claude" | "cursor" | "opencode" | "codex";
  * the only platform that supports `Agent(name1, name2)` in `allowed-tools`.
  *
  * Tool name maps come from `BuildConfig.platforms.<tool>.toolNames`, so users
- * can rename a tool through `.ai/build.config.json` without code changes.
+ * can rename a tool through `.ai/global/build.config.json` without code changes.
  */
 export function mapTools(perms: ToolPermissions, platform: ToolPlatform, cfg: BuildConfig): string[] {
   if (platform === "opencode" || platform === "codex") {

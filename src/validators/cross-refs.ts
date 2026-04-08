@@ -1,3 +1,4 @@
+import { AI_GLOBAL_SOURCES_DIR } from "../config.js";
 import type { ParsedAgent } from "../parsers/agent.js";
 import type { ParsedSkill } from "../parsers/skill.js";
 import type { McpConfig } from "../schema.js";
@@ -45,8 +46,8 @@ export function validateCrossRefs(
           diags.push({
             level: "warning",
             entity: `agent:${agent.name}`,
-            message: `References skill "${skillRef}" which is not defined in .ai/skills/`,
-            suggestion: `Create .ai/skills/${skillRef}/SKILL.md or remove the reference`,
+            message: `References skill "${skillRef}" which is not defined in .ai/${AI_GLOBAL_SOURCES_DIR}/skills/`,
+            suggestion: `Create .ai/${AI_GLOBAL_SOURCES_DIR}/skills/${skillRef}/SKILL.md or remove the reference`,
           });
         }
       }
@@ -59,8 +60,8 @@ export function validateCrossRefs(
           diags.push({
             level: "error",
             entity: `agent:${agent.name}`,
-            message: `References MCP server "${mcpRef}" which is not defined in .ai/mcp.json`,
-            suggestion: `Add "${mcpRef}" to .ai/mcp.json or remove the reference`,
+            message: `References MCP server "${mcpRef}" which is not defined in .ai/${AI_GLOBAL_SOURCES_DIR}/mcp.json`,
+            suggestion: `Add "${mcpRef}" to .ai/${AI_GLOBAL_SOURCES_DIR}/mcp.json or remove the reference`,
           });
         }
       }
@@ -74,8 +75,8 @@ export function validateCrossRefs(
           diags.push({
             level: "warning",
             entity: `agent:${agent.name}`,
-            message: `Subagent allowlist references "${subagentRef}" which is not defined in .ai/agents/`,
-            suggestion: `Create .ai/agents/${subagentRef}.md or remove from allowlist`,
+            message: `Subagent allowlist references "${subagentRef}" which is not defined in .ai/${AI_GLOBAL_SOURCES_DIR}/agents/`,
+            suggestion: `Create .ai/${AI_GLOBAL_SOURCES_DIR}/agents/${subagentRef}.md or remove from allowlist`,
           });
         }
       }

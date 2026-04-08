@@ -1,9 +1,14 @@
 /**
+ * Canonical AI source tree lives under `.ai/<AI_GLOBAL_SOURCES_DIR>/` (e.g. `.ai/global/`).
+ */
+export const AI_GLOBAL_SOURCES_DIR = "global" as const;
+
+/**
  * Default build configuration.
  *
  * Every machine-specific or platform-specific constant lives here under
  * `platforms.<tool>`. Users can override any leaf field by creating
- * `.ai/build.config.json` with the same shape — see `utils/build-config.ts`
+ * `.ai/global/build.config.json` with the same shape — see `utils/build-config.ts`
  * for the deep-merge loader. Code defaults stay in this file; user overrides
  * never live in source.
  *

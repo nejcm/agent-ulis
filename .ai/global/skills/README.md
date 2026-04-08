@@ -39,7 +39,7 @@ The build system copies `skills/` directly into `generated/opencode/skills/` at 
 
 ## Adding a New Skill
 
-1. Create `.ai/skills/<name>/SKILL.md` with the skill instructions
+1. Create `.ai/global/skills/<name>/SKILL.md` with the skill instructions
 2. Add a `config/` directory if the skill uses tool-specific configuration files
 3. Add a `references/` directory for any reference documents the skill reads
 4. Run `bun run build` from the repo root — the skill will be included automatically

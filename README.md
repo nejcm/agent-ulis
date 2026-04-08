@@ -2,7 +2,7 @@
 
 Single source of truth for AI tool configurations across [OpenCode](https://opencode.ai), [Claude Code](https://claude.ai/code), [Codex](https://github.com/openai/codex), and [Cursor](https://cursor.com).
 
-A TypeScript build system reads canonical sources from `.ai/` and generates tool-specific configs into `generated/` at the repo root, which are then deployed by an install script.
+A TypeScript build system reads canonical sources from `.ai/global/` and generates tool-specific configs into `generated/` at the repo root, which are then deployed by an install script.
 
 ## Specification
 
@@ -51,7 +51,7 @@ LINEAR_API_KEY      Linear API Key
 
 ## MCP Configuration
 
-MCP servers are defined once in `.ai/mcp.json` and distributed per-platform using the `targets` field:
+MCP servers are defined once in `.ai/global/mcp.json` and distributed per-platform using the `targets` field:
 
 | `targets` value          | Meaning                                                        |
 | ------------------------ | -------------------------------------------------------------- |
@@ -84,7 +84,7 @@ Generators iterate servers via the shared `mcpServersFor(mcp, target)` helper in
 
 ### Adding an MCP server
 
-1. Add an entry under `servers` in `.ai/mcp.json`.
+1. Add an entry under `servers` in `.ai/global/mcp.json`.
 2. Omit `targets` if it should apply everywhere, or list specific platforms.
 3. Reference any secrets as `${ENV_VAR}` — never hardcode.
 4. For remote servers that Codex needs to access, provide a `localFallback` (Codex only supports local command-based MCPs).
@@ -94,16 +94,16 @@ Generators iterate servers via the shared `mcpServersFor(mcp, target)` helper in
 
 ```
 .ai/
-  agents/           # 13 canonical agent definitions → see agents/README.md
-  skills/           # 16 skill definitions           → see skills/README.md
-  commands/         # 7 slash commands               → see commands/README.md
-  workflows/        # Workflow checklists            → see workflows/README.md
-  scripts/          # Runtime utility scripts        → see scripts/README.md
-  plugins/          # TypeScript plugins             → see plugins/README.md
-  docs/             # Integration documentation      → see docs/README.md
-  mcp.json          # Canonical MCP server definitions
-  plugins.json      # Claude Code marketplace plugins/skills
-  guardrails.md     # Cost controls and rate limits
+  global/           # Canonical sources (agents, skills, MCP, plugins, …)
+    agents/           # canonical agent definitions → see agents/README.md
+    skills/           # skill definitions           → see skills/README.md
+    commands/         # slash commands              → see commands/README.md
+    workflows/        # workflow checklists         → see workflows/README.md
+    scripts/          # runtime utility scripts     → see scripts/README.md
+    plugins/          # TypeScript plugins          → see plugins/README.md
+    mcp.json          # Canonical MCP server definitions
+    plugins.json      # Claude Code marketplace plugins/skills
+    guardrails.md     # Cost controls and rate limits
 src/                # TypeScript build system (see below)
 generated/          # Built output — committed, ready to install without building
 install.sh          # Linux/macOS installer
@@ -113,7 +113,7 @@ install.js          # Cross-platform entry (loads .env, runs install.sh / instal
 
 ## Build system
 
-The TypeScript sources under `src/` read canonical definitions from `.ai/` and write per-tool trees under `generated/`. Dependencies (`tsx`, `typescript`, `zod`, `gray-matter`, `oxfmt`, …) are declared in the root `package.json`.
+The TypeScript sources under `src/` read canonical definitions from `.ai/global/` and write per-tool trees under `generated/`. Dependencies (`tsx`, `typescript`, `zod`, `gray-matter`, `oxfmt`, …) are declared in the root `package.json`.
 
 ```
 src/

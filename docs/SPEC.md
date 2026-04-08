@@ -6,10 +6,10 @@ Version `1.0.0` · Source: `src/schema.ts` · Targets: Claude Code, OpenCode, Co
 
 ## 1. Overview
 
-ULIS is a build system that lets you define AI agent configurations **once** and compile them into the native format expected by each supported tool. You write canonical entity definitions in `.ai/`, run `bun run build`, and get ready-to-deploy configs in `generated/`.
+ULIS is a build system that lets you define AI agent configurations **once** and compile them into the native format expected by each supported tool. You write canonical entity definitions in `.ai/global/`, run `bun run build`, and get ready-to-deploy configs in `generated/`.
 
 ```
-.ai/                          generated/
+.ai/global/                   generated/
 ├── agents/*.md       ─────►  ├── claude/   (agents/, commands/, settings.json, rules/)
 ├── skills/*/         ─────►  ├── opencode/ (opencode.json, agents/, skills/)
 │   SKILL.md                  ├── codex/    (config.toml, agents/*.toml, AGENTS.md)
@@ -28,7 +28,7 @@ ULIS is a build system that lets you define AI agent configurations **once** and
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Source: .ai/                                           │
+│  Source: .ai/global/                                    │
 │  agents/*.md  skills/*/SKILL.md  mcp.json  plugins.json │
 └────────────────────────┬────────────────────────────────┘
                          │ gray-matter + Zod parse
@@ -57,9 +57,9 @@ Between parsing and generation the orchestrator runs **validators** (`src/valida
 
 Errors abort the build (exit code 1, no files written). Warnings print and the build proceeds.
 
-## 2.1 Build Configuration (`.ai/build.config.json`)
+## 2.1 Build Configuration (`.ai/global/build.config.json`)
 
-All machine-specific or platform-tunable constants live in `src/config.ts` under `BUILD_CONFIG.platforms.<tool>`. To override any leaf field for your repo, create `.ai/build.config.json` with the same shape — it is **deep-merged** on top of the defaults at build time, so you only specify what you want to change.
+All machine-specific or platform-tunable constants live in `src/config.ts` under `BUILD_CONFIG.platforms.<tool>`. To override any leaf field for your repo, create `.ai/global/build.config.json` with the same shape — it is **deep-merged** on top of the defaults at build time, so you only specify what you want to change.
 
 Example:
 
@@ -99,10 +99,10 @@ Capability mismatches are handled with **best-effort + comments**: if a target l
 
 ### 3.1 Agent
 
-An autonomous task executor. Defined in `.ai/agents/{name}.md` with YAML frontmatter + a Markdown prompt body.
+An autonomous task executor. Defined in `.ai/global/agents/{name}.md` with YAML frontmatter + a Markdown prompt body.
 
 ```yaml
-# .ai/agents/builder.md
+# .ai/global/agents/builder.md
 ---
 description: Implements features from specs
 model: sonnet
@@ -144,10 +144,10 @@ You are a focused implementation agent. Read specs carefully before writing code
 
 ### 3.2 Skill
 
-A composable, invocable capability. Defined as a directory `.ai/skills/{name}/SKILL.md`. Both the prompt and associated files (scripts, templates) live in the same directory.
+A composable, invocable capability. Defined as a directory `.ai/global/skills/{name}/SKILL.md`. Both the prompt and associated files (scripts, templates) live in the same directory.
 
 ```yaml
-# .ai/skills/code-quality/SKILL.md
+# .ai/global/skills/code-quality/SKILL.md
 ---
 description: Run code quality checks on the current file
 argumentHint: "[file-path]"
@@ -168,7 +168,7 @@ Skills become:
 
 ### 3.3 MCP Server
 
-Defined once in `.ai/mcp.json`. Each server may declare a `targets` list to restrict it to specific platforms.
+Defined once in `.ai/global/mcp.json`. Each server may declare a `targets` list to restrict it to specific platforms.
 
 **Semantics:**
 
@@ -208,10 +208,10 @@ Environment variables use `${VAR}` syntax everywhere. The build translates to pl
 
 ### 3.4 Plugin
 
-Defined in `.ai/plugins.json`. Two categories:
+Defined in `.ai/global/plugins.json`. Two categories:
 
 - **Claude marketplace plugins**: Official or GitHub-sourced plugins installed into `settings.json`
-- **OpenCode plugins**: TypeScript files in `.ai/plugins/` referenced in `opencode.json`
+- **OpenCode plugins**: TypeScript files in `.ai/global/plugins/` referenced in `opencode.json`
 
 ### 3.5 Hook
 
@@ -260,7 +260,7 @@ bun run build:claude           # single target
 bun run build --target cursor  # same via flag
 ```
 
-**Internal flow** (`src/index.ts`):
+**Internal flow** (`src/build.ts`): `aiDir` is `join(repoRoot, ".ai", "global")`.
 
 ```typescript
 const agents = parseAgents(join(aiDir, "agents"));
@@ -268,10 +268,10 @@ const skills = parseSkills(join(aiDir, "skills"));
 const mcp = parseMcpConfig(join(aiDir, "mcp.json"));
 const plugins = parsePluginsConfig(join(aiDir, "plugins.json"));
 
-generateClaude(agents, skills, mcp, plugins, aiDir, join(generatedDir, "claude"));
-generateOpencode(agents, skills, mcp, plugins, aiDir, join(generatedDir, "opencode"));
-generateCodex(agents, skills, mcp, aiDir, join(generatedDir, "codex"));
-generateCursor(agents, skills, mcp, join(generatedDir, "cursor"));
+generateClaude(agents, skills, mcp, plugins, aiDir, join(generatedDir, "claude"), buildConfig);
+generateOpencode(agents, skills, mcp, plugins, aiDir, join(generatedDir, "opencode"), buildConfig);
+generateCodex(agents, skills, mcp, aiDir, join(generatedDir, "codex"), buildConfig);
+generateCursor(agents, skills, mcp, aiDir, join(generatedDir, "cursor"), buildConfig);
 ```
 
 Parsing validates against Zod schemas and fails fast with a descriptive error if a field is invalid.
@@ -328,7 +328,7 @@ For capability mismatches, use `buildPolicyCommentBlock(agent.frontmatter, "md" 
 
 ## 8. Examples
 
-**Source:** `.ai/agents/` — canonical agent definitions
+**Source:** `.ai/global/agents/` — canonical agent definitions
 **Generated:** `generated/claude/agents/`, `generated/opencode/opencode.json`, etc.
 
 Run `bun run build` to see a full end-to-end example using the project's own agents.

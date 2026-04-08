@@ -110,7 +110,7 @@ export function generateOpencode(
     log.dim(`  mcp: ${name} (${server.type})`);
   }
 
-  // Build permission block from BUILD_CONFIG (overridable via .ai/build.config.json)
+  // Build permission block from BUILD_CONFIG (overridable via .ai/global/build.config.json)
   const permissionBlock: Record<string, unknown> = {
     skill: config.skillAllowlist,
     bash: config.bashAllowlist,

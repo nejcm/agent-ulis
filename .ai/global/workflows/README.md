@@ -37,6 +37,6 @@ The build system copies `workflows/` directly into `generated/opencode/workflows
 
 ## Adding a New Workflow
 
-1. Create `.ai/workflows/<name>.md`
+1. Create `.ai/global/workflows/<name>.md`
 2. Structure it as phased checklists with `- [ ]` items
 3. Run `bun run build` from the repo root — it will be included automatically

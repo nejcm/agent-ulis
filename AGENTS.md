@@ -13,5 +13,5 @@ Use these official sources when you need tool-specific configuration behavior an
 
 ## This repository
 
-Canonical definitions live under [`.ai/`](.ai/); the TypeScript build emits per-tool output under [`generated/`](generated/).
+Canonical definitions live under [`.ai/global/`](.ai/global/); the TypeScript build emits per-tool output under [`generated/`](generated/).
 See [`README.md`](README.md) for layout, scripts, install targets, and build-system details.

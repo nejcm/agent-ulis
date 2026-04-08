@@ -1,10 +1,10 @@
 import { join } from "node:path";
 
-import { BUILD_CONFIG, type BuildConfig } from "../config.js";
+import { AI_GLOBAL_SOURCES_DIR, BUILD_CONFIG, type BuildConfig } from "../config.js";
 import { fileExists, readFile } from "./fs.js";
 
 /**
- * Load `.ai/build.config.json` (if present) and deep-merge it over the
+ * Load `build.config.json` from `aiDir` (typically `.ai/global/build.config.json`) and deep-merge it over the
  * code defaults from `BUILD_CONFIG`. The user file may be a partial — only
  * the leaves you specify are overridden.
  *
@@ -21,11 +21,11 @@ export function loadBuildConfig(aiDir: string): BuildConfig {
   try {
     parsed = JSON.parse(readFile(overridePath));
   } catch (err) {
-    throw new Error(`Failed to parse .ai/build.config.json: ${(err as Error).message}`);
+    throw new Error(`Failed to parse .ai/${AI_GLOBAL_SOURCES_DIR}/build.config.json: ${(err as Error).message}`);
   }
 
   if (!isPlainObject(parsed)) {
-    throw new Error(".ai/build.config.json must be a JSON object");
+    throw new Error(`.ai/${AI_GLOBAL_SOURCES_DIR}/build.config.json must be a JSON object`);
   }
 
   return deepMerge(BUILD_CONFIG, parsed) as BuildConfig;

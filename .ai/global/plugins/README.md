@@ -27,7 +27,7 @@ export default {
 
 ## Registration
 
-Plugins are referenced in `.ai/plugins.json` and included in the generated OpenCode config:
+Plugins are referenced in `.ai/global/plugins.json` and included in the generated OpenCode config:
 
 ```json
 {
@@ -41,7 +41,7 @@ The build system copies plugins to `generated/opencode/plugins/` at the repo roo
 
 ## Adding a New Plugin
 
-1. Create `.ai/plugins/<name>.ts`
+1. Create `.ai/global/plugins/<name>.ts`
 2. Export a default plugin object with `name`, `version`, and `hooks`
-3. Add the path to `.ai/plugins.json` under `opencode.plugins`
+3. Add the path to `.ai/global/plugins.json` under `opencode.plugins`
 4. Run `bun run build` from the repo root

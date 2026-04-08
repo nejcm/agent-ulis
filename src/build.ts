@@ -7,6 +7,7 @@ import { generateOpencode } from "./generators/opencode.js";
 import { parseAgents } from "./parsers/agent.js";
 import { parseSkills } from "./parsers/skill.js";
 import type { Platform } from "./platforms.js";
+import { AI_GLOBAL_SOURCES_DIR } from "./config.js";
 import { PLATFORMS, uniquePlatforms } from "./platforms.js";
 import { McpConfigSchema, PluginsConfigSchema } from "./schema.js";
 import { loadBuildConfig } from "./utils/build-config.js";
@@ -33,7 +34,7 @@ export interface BuildOptions {
 export function runBuild(options: BuildOptions = {}): readonly Platform[] {
   const logger = options.logger ?? log;
   const rootDir = options.rootDir ?? resolve(join(import.meta.dirname, ".."));
-  const aiDir = resolve(join(rootDir, ".ai"));
+  const aiDir = resolve(join(rootDir, ".ai", AI_GLOBAL_SOURCES_DIR));
   const generatedDir = resolve(join(rootDir, "generated"));
   const activeTargets = options.targets ? uniquePlatforms(options.targets) : [...PLATFORMS];
 
