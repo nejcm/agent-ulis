@@ -12,9 +12,9 @@ import {
   SkillFrontmatterSchema,
   McpConfigSchema,
   PluginsConfigSchema,
-} from "../src/schema.js";
+} from "../schema.js";
 
-const outDir = resolve(join(import.meta.dirname, "..", "docs"));
+const outDir = resolve(join(import.meta.dirname, "../..", "docs"));
 mkdirSync(outDir, { recursive: true });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -80,8 +80,8 @@ function renderPropertiesTable(
   return rows.join("\n");
 }
 
-function renderSection(title: string, schema: Parameters<typeof zodToJsonSchema>[0]): string {
-  const json = zodToJsonSchema(schema, {
+function renderSection(title: string, schema: unknown): string {
+  const json = zodToJsonSchema(schema as Parameters<typeof zodToJsonSchema>[0], {
     name: title,
     $refStrategy: "none",
     errorMessages: false,

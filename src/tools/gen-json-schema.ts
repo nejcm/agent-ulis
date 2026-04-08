@@ -12,9 +12,9 @@ import {
   SkillFrontmatterSchema,
   McpConfigSchema,
   PluginsConfigSchema,
-} from "../src/schema.js";
+} from "../schema.js";
 
-const outDir = resolve(join(import.meta.dirname, "..", "schemas"));
+const outDir = resolve(join(import.meta.dirname, "../..", "schemas"));
 mkdirSync(outDir, { recursive: true });
 
 const schemas: Array<{ name: string; schema: unknown }> = [

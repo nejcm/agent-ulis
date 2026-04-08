@@ -19,8 +19,8 @@
     "rebuild": "bun run build",
     "test": "bun test",
     "test:update": "bun test --update-snapshots",
-    "gen:schemas": "tsx tools/gen-json-schema.ts",
-    "gen:reference": "tsx tools/gen-reference.ts",
+    "gen:schemas": "tsx src/tools/gen-json-schema.ts",
+    "gen:reference": "tsx src/tools/gen-reference.ts",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check ."
   },
