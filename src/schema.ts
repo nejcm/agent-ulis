@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { CLAUDE_MODELS, CODEX_MODELS, CURSOR_MODELS, GENERIC_MODELS, OPENCODE_MODELS } from "./models.js";
+
 export const ToolPermissionsSchema = z.object({
   read: z.boolean().default(true),
   write: z.boolean().default(false),
@@ -28,7 +30,7 @@ export const AgentFrontmatterSchema = z.object({
   description: z.string(),
 
   // MODEL CONFIG
-  model: z.enum(["opus", "sonnet", "haiku", "inherit"]).default("sonnet"),
+  model: z.enum(GENERIC_MODELS).default("sonnet"),
   temperature: z.number().min(0).max(1).optional(),
   effort: z.enum(["low", "medium", "high", "max"]).optional(),
 
@@ -89,7 +91,7 @@ export const AgentFrontmatterSchema = z.object({
       claude: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // exact Claude model ID, overrides top-level model + modelMap
+          model: z.enum(CLAUDE_MODELS).optional(),
           permissionMode: z.enum(["default", "auto", "acceptEdits", "dontAsk", "bypassPermissions", "plan"]).optional(),
           disallowedTools: z.array(z.string()).optional(),
           initialPrompt: z.string().optional(),
@@ -98,7 +100,7 @@ export const AgentFrontmatterSchema = z.object({
       opencode: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // full OpenCode model ID, overrides top-level model + modelMap
+          model: z.enum(OPENCODE_MODELS).optional(),
           mode: z.enum(["primary", "subagent", "all"]).default("subagent"),
           top_p: z.number().min(0).max(1).optional(),
           rate_limit_per_hour: z.number().optional(),
@@ -115,7 +117,7 @@ export const AgentFrontmatterSchema = z.object({
       codex: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // Codex/OpenAI model name, e.g. "o3", "gpt-4.1", "codex-mini"
+          model: z.enum(CODEX_MODELS).optional(),
           sandbox_mode: z.string().optional(),
           model_reasoning_effort: z.string().optional(),
           nickname_candidates: z.array(z.string()).optional(),
@@ -124,7 +126,7 @@ export const AgentFrontmatterSchema = z.object({
       cursor: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // Cursor model ID, overrides top-level model + modelMap
+          model: z.enum(CURSOR_MODELS).optional(),
           readonly: z.boolean().optional(), // maps to Cursor `readonly: true` — agent cannot modify files
           is_background: z.boolean().optional(), // maps to Cursor `is_background: true` — async non-blocking execution
         })
@@ -167,7 +169,7 @@ export const SkillFrontmatterSchema = z.object({
   allowImplicitInvocation: z.boolean().default(true), // false = Codex explicit-only ($name)
 
   // EXECUTION
-  model: z.enum(["opus", "sonnet", "haiku", "inherit"]).optional(),
+  model: z.enum(GENERIC_MODELS).optional(),
   effort: z.enum(["low", "medium", "high", "max"]).optional(),
   isolation: z.enum(["fork", "none"]).optional(), // fork = Claude `context: fork`
 
@@ -191,20 +193,20 @@ export const SkillFrontmatterSchema = z.object({
       claude: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // exact Claude model ID, overrides top-level model + modelMap
+          model: z.enum(CLAUDE_MODELS).optional(),
           shell: z.enum(["bash", "powershell"]).optional(),
         })
         .optional(),
       opencode: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // full OpenCode model ID, overrides top-level model + modelMap
+          model: z.enum(OPENCODE_MODELS).optional(),
         })
         .optional(),
       codex: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // Codex/OpenAI model name, e.g. "o3", "gpt-4.1"
+          model: z.enum(CODEX_MODELS).optional(),
           // UI/branding (maps to agents/openai.yaml `interface` block)
           displayName: z.string().optional(),
           shortDescription: z.string().optional(),
@@ -229,7 +231,7 @@ export const SkillFrontmatterSchema = z.object({
       cursor: z
         .object({
           enabled: z.boolean().default(true),
-          model: z.string().optional(), // Cursor model ID, overrides top-level model + modelMap
+          model: z.enum(CURSOR_MODELS).optional(),
         })
         .optional(),
     })

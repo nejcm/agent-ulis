@@ -21,15 +21,13 @@ export function generateCursor(
   cleanDir(outDir);
   log.header("Cursor");
 
-  const modelMap = cfg.platforms.cursor.modelMap;
-
   // Generate agent .mdc files
   const enabledAgents = enabledAgentsFor(agents, "cursor");
 
   for (const agent of enabledAgents) {
     const { frontmatter: fm } = agent;
     const cursorPlatform = fm.platforms?.cursor;
-    const model = cursorPlatform?.model ?? modelMap[fm.model] ?? fm.model;
+    const model = cursorPlatform?.model ?? fm.model;
     const tools = mapTools(fm.tools, "cursor", cfg);
 
     // Resolve readonly: explicit cursor override > security.permissionLevel === "readonly"

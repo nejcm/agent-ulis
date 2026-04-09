@@ -30,7 +30,7 @@ export function generateOpencode(
   for (const agent of enabledAgents) {
     const ocName = config.agentNameMap[agent.name] ?? agent.name;
     const ocPlatform = agent.frontmatter.platforms?.opencode;
-    const ocModel = ocPlatform?.model ?? config.modelMap[agent.frontmatter.model] ?? agent.frontmatter.model;
+    const ocModel = ocPlatform?.model ?? agent.frontmatter.model;
 
     const entry: Record<string, unknown> = {
       description: agent.frontmatter.description,

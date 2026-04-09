@@ -19,7 +19,6 @@ export const AI_GLOBAL_SOURCES_DIR = "global" as const;
 export interface BuildConfig {
   readonly platforms: {
     readonly claude: {
-      readonly modelMap: Readonly<Record<string, string>>;
       readonly toolNames: {
         readonly read: readonly string[];
         readonly write: readonly string[];
@@ -33,7 +32,6 @@ export interface BuildConfig {
       readonly defaultModel: string;
       readonly smallModel: string;
       readonly schema: string;
-      readonly modelMap: Readonly<Record<string, string>>;
       readonly agentNameMap: Readonly<Record<string, string>>;
       readonly bashAllowlist: Readonly<Record<string, "ask" | "allow" | "deny">>;
       readonly skillAllowlist: Readonly<Record<string, "ask" | "allow" | "deny">>;
@@ -49,7 +47,6 @@ export interface BuildConfig {
       readonly mcpStartupTimeoutSec: number;
     };
     readonly cursor: {
-      readonly modelMap: Readonly<Record<string, string>>;
       readonly toolNames: {
         readonly read: readonly string[];
         readonly write: readonly string[];
@@ -65,11 +62,6 @@ export interface BuildConfig {
 export const BUILD_CONFIG: BuildConfig = {
   platforms: {
     claude: {
-      modelMap: {
-        opus: "opus",
-        sonnet: "sonnet",
-        haiku: "haiku",
-      },
       toolNames: {
         read: ["Read", "Glob", "Grep"],
         write: ["Write"],
@@ -83,11 +75,6 @@ export const BUILD_CONFIG: BuildConfig = {
       defaultModel: "sonnet",
       smallModel: "opencode/kimi-k2.5-free",
       schema: "https://opencode.ai/config.json",
-      modelMap: {
-        opus: "anthropic/claude-opus-4-6",
-        sonnet: "sonnet",
-        haiku: "haiku",
-      },
       agentNameMap: {
         debugger: "debug",
         devops: "devops-engineer",
@@ -128,11 +115,6 @@ export const BUILD_CONFIG: BuildConfig = {
       mcpStartupTimeoutSec: 20,
     },
     cursor: {
-      modelMap: {
-        opus: "claude-opus-4-6",
-        sonnet: "claude-sonnet-4-6",
-        haiku: "claude-haiku-4-5-20251001",
-      },
       toolNames: {
         read: ["read_file", "list_directory", "search_files"],
         write: ["write_file"],
