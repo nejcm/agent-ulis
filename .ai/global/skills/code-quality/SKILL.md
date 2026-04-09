@@ -3,6 +3,10 @@ name: code-quality
 description: Automated code quality checks including linting, formatting, and type checking
 category: quality
 version: "1.0.0"
+model: haiku
+platforms:
+  codex:
+    model: gpt-5.4-mini
 ---
 
 # Code Quality Skill

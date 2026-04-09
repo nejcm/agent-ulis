@@ -2,6 +2,10 @@
 name: git-workflow
 description: Manage Git operations including branches, commits, and pull requests
 category: workflow
+model: haiku
+platforms:
+  codex:
+    model: gpt-5.4-mini
 ---
 
 # Git Workflow Skill

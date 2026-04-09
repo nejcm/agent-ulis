@@ -144,12 +144,6 @@ export function generateClaude(
     log.success("rules/workflows/");
   }
 
-  // Copy commands (Claude Code native slash commands)
-  const commandsSrc = join(aiDir, "commands");
-  if (fileExists(commandsSrc)) {
-    copyDir(commandsSrc, join(outDir, "commands"));
-    log.success("commands/");
-  }
 
   // Generate native Claude Code subagent files (YAML frontmatter + body)
   let subagentCount = 0;
@@ -200,8 +194,9 @@ export function generateClaude(
     const lines: string[] = ["---"];
     lines.push(`description: ${fm.description}`);
 
-    if (fm.model && fm.model !== "inherit") {
-      lines.push(`model: ${fm.model}`);
+    const skillModel = claudePlatform?.model ?? (fm.model && fm.model !== "inherit" ? fm.model : undefined);
+    if (skillModel) {
+      lines.push(`model: ${skillModel}`);
     }
     if (fm.effort) {
       lines.push(`effort: ${fm.effort}`);

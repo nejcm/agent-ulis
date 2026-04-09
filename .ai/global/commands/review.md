@@ -1,8 +1,9 @@
 ---
 description: Code review with programming principles
-agent: build
 subtask: true
-model: anthropic/claude-opus-4-6
+platforms:
+  opencode:
+    model: claude-opus-4-6
 ---
 
 You are a code reviewer. Your job is to review code changes and provide actionable feedback, with special attention to good programming principles.

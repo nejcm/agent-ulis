@@ -2,6 +2,9 @@
 description: Detect and run formatting then linting commands
 subtask: true
 model: haiku
+platforms:
+  opencode:
+    model: claude-haiku-4-5-20251001
 ---
 
 Run the following steps to format and lint the code:

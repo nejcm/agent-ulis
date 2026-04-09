@@ -149,10 +149,16 @@ export function generateCodex(
       codexPlatform?.brandColor ||
       codexPlatform?.defaultPrompt;
     const hasDeps = codexPlatform?.mcpDependencies?.length;
-    const needsYaml = hasUiConfig || hasDeps || !fm.allowImplicitInvocation;
+    const hasModel = !!codexPlatform?.model;
+    const needsYaml = hasUiConfig || hasDeps || hasModel || !fm.allowImplicitInvocation;
 
     if (needsYaml) {
       const yamlLines: string[] = [];
+
+      if (hasModel) {
+        yamlLines.push(`model: "${codexPlatform!.model}"`);
+        yamlLines.push("");
+      }
 
       if (hasUiConfig) {
         yamlLines.push("interface:");

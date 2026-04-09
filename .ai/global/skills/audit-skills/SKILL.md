@@ -2,6 +2,7 @@
 name: audit-skills
 description: Comprehensive security risk analysis for Claude skills. Use when asked to analyze security risks, review security stance, audit skills for vulnerabilities, check security before deployment, or evaluate safety of skill files.
 category: security
+model: sonnet
 platforms:
   opencode:
     enabled: true
@@ -9,6 +10,7 @@ platforms:
     enabled: true
   codex:
     enabled: true
+    model: gpt-5.4
   cursor:
     enabled: true
 ---

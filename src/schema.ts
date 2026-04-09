@@ -238,6 +238,25 @@ export const SkillFrontmatterSchema = z.object({
     .optional(),
 });
 
+export const CommandFrontmatterSchema = z
+  .object({
+    description: z.string(),
+    model: z.enum(GENERIC_MODELS).optional(),
+    platforms: z
+      .object({
+        opencode: z
+          .object({
+            enabled: z.boolean().default(true),
+            model: z.enum(CLAUDE_MODELS).optional(),
+          })
+          .optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
+
+export type CommandFrontmatter = z.infer<typeof CommandFrontmatterSchema>;
+
 export const ClaudePluginSchema = z.object({
   name: z.string(),
   source: z.string(),

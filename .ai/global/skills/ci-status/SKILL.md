@@ -2,6 +2,10 @@
 name: ci-status
 description: Check CI/CD pipeline status and retrieve build results
 category: workflow
+model: haiku
+platforms:
+  codex:
+    model: gpt-5.4-mini
 ---
 
 # CI Status Skill

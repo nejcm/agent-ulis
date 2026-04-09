@@ -2,6 +2,9 @@
 description: Create a branch and matching worktree
 subtask: true
 model: haiku
+platforms:
+  opencode:
+    model: claude-haiku-4-5-20251001
 ---
 
 Create a new branch worktree at `./tree/<branch>`.

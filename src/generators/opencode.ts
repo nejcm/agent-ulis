@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { parseCommands } from "../parsers/command.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig, PluginsConfig } from "../schema.js";
 import { writeFile, copyDir, cleanDir, copySkillDirs, fileExists, readFile } from "../utils/fs.js";
@@ -161,8 +162,44 @@ export function generateOpencode(
     log.success(`skills/ (${enabledSkills.length} skills)`);
   }
 
+  // Process commands: resolve platforms.opencode.model ?? model, strip platforms block.
+  const commandsSrc = join(aiDir, "commands");
+  if (fileExists(commandsSrc)) {
+    const parsedCmds = parseCommands(commandsSrc);
+    for (const cmd of parsedCmds) {
+      const fm = cmd.frontmatter as Record<string, unknown>;
+      const ocPlatform = (fm.platforms as Record<string, unknown> | undefined)?.opencode as
+        | Record<string, unknown>
+        | undefined;
+      const resolvedModel = (ocPlatform?.model ?? fm.model) as string | undefined;
+
+      const { platforms: _platforms, model: _model, ...rest } = fm;
+      const outData: Record<string, unknown> = { ...rest };
+      if (resolvedModel && resolvedModel !== "inherit") {
+        outData.model = resolvedModel;
+      }
+
+      const lines = ["---"];
+      for (const [k, v] of Object.entries(outData)) {
+        if (v === undefined || v === null) continue;
+        if (typeof v === "boolean") lines.push(`${k}: ${v}`);
+        else if (typeof v === "number") lines.push(`${k}: ${v}`);
+        else if (Array.isArray(v)) lines.push(`${k}: ${JSON.stringify(v)}`);
+        else lines.push(`${k}: ${v}`);
+      }
+      lines.push("---");
+
+      writeFile(join(outDir, "commands", cmd.filename), `${lines.join("\n")}\n\n${cmd.body}\n`);
+    }
+    const readmeSrc = join(commandsSrc, "README.md");
+    if (fileExists(readmeSrc)) {
+      writeFile(join(outDir, "commands", "README.md"), readFile(readmeSrc));
+    }
+    log.success(`commands/ (${parsedCmds.length} commands processed)`);
+  }
+
   // Copy directories if they exist
-  const copyDirs = ["commands", "workflows", "scripts", "plugins", "docs"];
+  const copyDirs = ["workflows", "scripts", "plugins", "docs"];
   for (const dir of copyDirs) {
     const src = join(aiDir, dir);
     if (fileExists(src)) {

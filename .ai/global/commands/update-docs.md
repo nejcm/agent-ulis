@@ -2,6 +2,9 @@
 description: Update implementation and project documentation
 subtask: true
 model: haiku
+platforms:
+  opencode:
+    model: claude-haiku-4-5-20251001
 ---
 
 # Documentation Analysis
