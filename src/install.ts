@@ -1,13 +1,11 @@
 import { spawnSync } from "node:child_process";
 import {
-  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
@@ -127,7 +125,6 @@ function installOpencode(context: InstallContext): void {
 
   rmSync(targetDir, { recursive: true, force: true });
   cpSync(join(context.generatedDir, "opencode"), targetDir, { recursive: true });
-  chmodOpenCodeScripts(targetDir);
   logSuccess(context.logger, `OpenCode -> ${targetDir}`);
 }
 
@@ -248,23 +245,6 @@ function backupDirectory(targetDir: string, context: InstallContext): void {
   logInfo(context.logger, `[backup] ${targetDir} -> ${backupPath}`);
 }
 
-function chmodOpenCodeScripts(targetDir: string): void {
-  if (process.platform === "win32") {
-    return;
-  }
-
-  const scriptsDir = join(targetDir, "scripts");
-  if (!existsSync(scriptsDir)) {
-    return;
-  }
-
-  for (const entry of readdirSync(scriptsDir)) {
-    const scriptPath = join(scriptsDir, entry);
-    if (statSync(scriptPath).isFile() && entry.endsWith(".sh")) {
-      chmodSync(scriptPath, 0o755);
-    }
-  }
-}
 
 function installClaudeMarketplacePlugin(logger?: Logger): void {
   if (!commandExists("claude")) {
