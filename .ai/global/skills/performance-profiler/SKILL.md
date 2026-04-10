@@ -517,9 +517,7 @@ Query: SELECT * FROM users WHERE id = 3;
 // Bad: N+1 queries
 const posts = await db.query("SELECT * FROM posts");
 for (const post of posts) {
-  post.author = await db.query("SELECT * FROM users WHERE id = ?", [
-    post.user_id,
-  ]);
+  post.author = await db.query("SELECT * FROM users WHERE id = ?", [post.user_id]);
 }
 
 // Good: Single JOIN query

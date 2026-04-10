@@ -92,7 +92,7 @@ export function generateOpencode(
     if (server.type === "local") {
       const entry: Record<string, unknown> = {
         type: "local",
-        enabled: true,
+        enabled: server.enabled ?? true,
         command: server.command ? [server.command, ...(server.args ?? [])] : undefined,
       };
       const environment = translateEnvMap(server.env, "opencode_env");
@@ -101,6 +101,7 @@ export function generateOpencode(
     } else {
       const entry: Record<string, unknown> = {
         type: "remote",
+        enabled: server.enabled ?? true,
         url: server.url,
       };
       const headers = translateEnvMap(server.headers, "opencode_header");

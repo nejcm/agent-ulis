@@ -1,13 +1,5 @@
 import { spawnSync } from "node:child_process";
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
 
@@ -244,7 +236,6 @@ function backupDirectory(targetDir: string, context: InstallContext): void {
   cpSync(targetDir, backupPath, { recursive: true });
   logInfo(context.logger, `[backup] ${targetDir} -> ${backupPath}`);
 }
-
 
 function installClaudeMarketplacePlugin(logger?: Logger): void {
   if (!commandExists("claude")) {

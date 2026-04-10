@@ -1,4 +1,8 @@
+# ⚠️ WORK IN PROGRESS
+
 # ai-configs
+
+> 💡 **ULIS**: Unified LLM Interface Specification
 
 Single source of truth for AI tool configurations across [OpenCode](https://opencode.ai), [Claude Code](https://claude.ai/code), [Codex](https://github.com/openai/codex), and [Cursor](https://cursor.com).
 
@@ -134,13 +138,13 @@ src/
 
 ### Generator outputs
 
-| Source                               | OpenCode                                     | Claude Code                                      | Codex                   | Cursor     |
-| ------------------------------------ | -------------------------------------------- | ------------------------------------------------ | ----------------------- | ---------- |
-| `agents/*.md`                        | `opencode.json` agent blocks + `agents/` dir | `rules/common/agents.md` (generated)             | Instruction sections    | —          |
-| `guardrails.md`                      | —                                            | `rules/common/guardrails.md`                     | Appended to `AGENTS.md` | —          |
-| `mcp.json`                           | `opencode.json` mcp block                    | `settings.json` mcpServers                       | `config.toml`           | `mcp.json` |
-| `plugins.json`                       | Plugin array                                 | `settings.json` enabledPlugins                   | —                       | —          |
-| `skills/`, `commands/`               | Copied as-is                                 | —                                                | —                       | —          |
+| Source                 | OpenCode                                     | Claude Code                          | Codex                   | Cursor     |
+| ---------------------- | -------------------------------------------- | ------------------------------------ | ----------------------- | ---------- |
+| `agents/*.md`          | `opencode.json` agent blocks + `agents/` dir | `rules/common/agents.md` (generated) | Instruction sections    | —          |
+| `guardrails.md`        | —                                            | `rules/common/guardrails.md`         | Appended to `AGENTS.md` | —          |
+| `mcp.json`             | `opencode.json` mcp block                    | `settings.json` mcpServers           | `config.toml`           | `mcp.json` |
+| `plugins.json`         | Plugin array                                 | `settings.json` enabledPlugins       | —                       | —          |
+| `skills/`, `commands/` | Copied as-is                                 | —                                    | —                       | —          |
 
 ### Adding a new generator
 

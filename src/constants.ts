@@ -37,7 +37,14 @@ export const APPROVAL_ACTIONS = ["write", "edit", "bash", "agent", "mcp"] as con
 export type ApprovalAction = (typeof APPROVAL_ACTIONS)[number];
 
 // Claude Code permission modes
-export const CLAUDE_PERMISSION_MODES = ["default", "auto", "acceptEdits", "dontAsk", "bypassPermissions", "plan"] as const;
+export const CLAUDE_PERMISSION_MODES = [
+  "default",
+  "auto",
+  "acceptEdits",
+  "dontAsk",
+  "bypassPermissions",
+  "plan",
+] as const;
 export type ClaudePermissionMode = (typeof CLAUDE_PERMISSION_MODES)[number];
 
 // OpenCode agent execution modes

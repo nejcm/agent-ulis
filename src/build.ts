@@ -1,5 +1,6 @@
 import { join, resolve } from "node:path";
 
+import { AI_GLOBAL_SOURCES_DIR } from "./config.js";
 import { generateClaude } from "./generators/claude.js";
 import { generateCodex } from "./generators/codex.js";
 import { generateCursor } from "./generators/cursor.js";
@@ -7,7 +8,6 @@ import { generateOpencode } from "./generators/opencode.js";
 import { parseAgents } from "./parsers/agent.js";
 import { parseSkills } from "./parsers/skill.js";
 import type { Platform } from "./platforms.js";
-import { AI_GLOBAL_SOURCES_DIR } from "./config.js";
 import { PLATFORMS, uniquePlatforms } from "./platforms.js";
 import { McpConfigSchema, PluginsConfigSchema } from "./schema.js";
 import { loadBuildConfig } from "./utils/build-config.js";

@@ -137,8 +137,6 @@ export function generateClaude(
     log.success("rules/common/guardrails.md");
   }
 
-
-
   // Generate native Claude Code subagent files (YAML frontmatter + body)
   let subagentCount = 0;
   for (const agent of enabledAgents) {
@@ -260,11 +258,12 @@ export function generateClaude(
       mcpServers[name] = entry;
       log.dim(`  mcp: ${name} (local)`);
     } else if (server.url) {
-      const entry: Record<string, unknown> = { url: server.url };
+      const transportType = server.transport ?? "http";
+      const entry: Record<string, unknown> = { type: transportType, url: server.url };
       const headers = translateEnvMap(server.headers, "claude");
       if (headers) entry.headers = headers;
       mcpServers[name] = entry;
-      log.dim(`  mcp: ${name} (remote)`);
+      log.dim(`  mcp: ${name} (remote/${transportType})`);
     }
   }
 

@@ -10,6 +10,56 @@ import { log } from "../utils/logger.js";
 import { mcpServersFor } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
 
+/**
+ * Parse a headers map and emit the Codex TOML representation for an HTTP MCP server.
+ *
+ * Codex distinguishes three cases for headers:
+ * - `bearer_token_env_var`: shorthand when a header value is exactly `Bearer ${VAR}`
+ * - `env_http_headers`:     table mapping header-name → env-var-name (for `${VAR}` values)
+ * - `http_headers`:         table of static key-value pairs (no env var substitution)
+ *
+ * Returns the TOML lines to append after the `url =` line.
+ */
+function codexHttpHeaderLines(name: string, headers: Record<string, string> | undefined): string[] {
+  if (!headers || Object.keys(headers).length === 0) return [];
+
+  const lines: string[] = [];
+  const envHeaders: Array<[string, string]> = [];
+  const staticHeaders: Array<[string, string]> = [];
+  let bearerVar: string | undefined;
+
+  for (const [headerName, headerValue] of Object.entries(headers)) {
+    // Detect `Bearer ${VAR}` pattern — maps to bearer_token_env_var
+    const bearerMatch = headerValue.match(/^Bearer \$\{(\w+)\}$/);
+    if (bearerMatch && !bearerVar) {
+      bearerVar = bearerMatch[1];
+      continue;
+    }
+    // Detect `${VAR}` pattern (possibly with prefix/suffix) — maps to env_http_headers
+    if (/\$\{(\w+)\}/.test(headerValue)) {
+      const varName = translateEnvVar(headerValue, "codex_header");
+      envHeaders.push([headerName, varName]);
+      continue;
+    }
+    // Static value
+    staticHeaders.push([headerName, headerValue]);
+  }
+
+  if (bearerVar) {
+    lines.push(`bearer_token_env_var = "${bearerVar}"`);
+  }
+  if (staticHeaders.length > 0) {
+    const pairs = staticHeaders.map(([k, v]) => `"${k}" = "${v}"`).join(", ");
+    lines.push(`http_headers = { ${pairs} }`);
+  }
+  if (envHeaders.length > 0) {
+    const pairs = envHeaders.map(([k, v]) => `"${k}" = "${v}"`).join(", ");
+    lines.push(`env_http_headers = { ${pairs} }`);
+  }
+
+  return lines;
+}
+
 export function generateCodex(
   agents: readonly ParsedAgent[],
   skills: readonly ParsedSkill[],
@@ -62,8 +112,18 @@ export function generateCodex(
       }
       lines.push("");
       log.dim(`  mcp: ${name} (local)`);
+    } else if (server.url) {
+      // Remote server with a URL — emit native Codex HTTP format
+      lines.push(`[mcp_servers.${name}]`);
+      lines.push(`url = "${server.url}"`);
+      for (const headerLine of codexHttpHeaderLines(name, server.headers)) {
+        lines.push(headerLine);
+      }
+      lines.push(`startup_timeout_sec = ${cfg.mcpStartupTimeoutSec}`);
+      lines.push("");
+      log.dim(`  mcp: ${name} (remote/http)`);
     } else if (server.localFallback) {
-      // Use local fallback for remote servers
+      // Remote server without a URL — fall back to local stdio process
       lines.push(`[mcp_servers.${name}]`);
       lines.push(`command = "${server.localFallback.command}"`);
       const args = server.localFallback.args.map((a) => `"${translateEnvVar(a, "codex")}"`).join(", ");
@@ -72,7 +132,7 @@ export function generateCodex(
       lines.push("");
       log.dim(`  mcp: ${name} (remote->localFallback)`);
     } else {
-      log.warn(`  mcp: ${name} skipped (remote, no localFallback)`);
+      log.warn(`  mcp: ${name} skipped (remote, no url or localFallback)`);
     }
   }
 
