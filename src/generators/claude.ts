@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
-import type { McpConfig, PluginsConfig, ToolPermissions } from "../schema.js";
+import type { McpConfig, PermissionsConfig, PluginsConfig, ToolPermissions } from "../schema.js";
 import { cleanDir, copyDir, fileExists, readFile, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
@@ -124,6 +124,7 @@ export function generateClaude(
   aiDir: string,
   outDir: string,
   cfg: BuildConfig,
+  permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
   log.header("Claude Code");
@@ -283,6 +284,17 @@ export function generateClaude(
     }
   }
 
+  // Build permissions block from permissions.json
+  const permissionsBlock: Record<string, unknown> = {};
+  if (permissions?.claude) {
+    const cp = permissions.claude;
+    if (cp.defaultMode) permissionsBlock.defaultMode = cp.defaultMode;
+    if (cp.allow?.length) permissionsBlock.allow = cp.allow;
+    if (cp.deny?.length) permissionsBlock.deny = cp.deny;
+    if (cp.ask?.length) permissionsBlock.ask = cp.ask;
+    if (cp.additionalDirectories?.length) permissionsBlock.additionalDirectories = cp.additionalDirectories;
+  }
+
   const settings: Record<string, unknown> = {
     enabledPlugins,
   };
@@ -291,6 +303,9 @@ export function generateClaude(
   }
   if (Object.keys(mcpServers).length > 0) {
     settings.mcpServers = mcpServers;
+  }
+  if (Object.keys(permissionsBlock).length > 0) {
+    settings.permissions = permissionsBlock;
   }
 
   writeFile(join(outDir, "settings.json"), JSON.stringify(settings, null, 2));

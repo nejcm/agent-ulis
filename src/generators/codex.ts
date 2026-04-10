@@ -3,9 +3,9 @@ import { join } from "node:path";
 import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
-import type { McpConfig } from "../schema.js";
+import type { McpConfig, PermissionsConfig } from "../schema.js";
 import { translateEnvVar } from "../utils/env-var.js";
-import { writeFile, cleanDir, copyDir, fileExists } from "../utils/fs.js";
+import { cleanDir, copyDir, fileExists, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
@@ -67,6 +67,7 @@ export function generateCodex(
   aiDir: string,
   outDir: string,
   buildConfig: BuildConfig,
+  permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
   log.header("Codex");
@@ -79,13 +80,22 @@ export function generateCodex(
   // Top-level config
   lines.push(`model = "${cfg.model}"`);
   lines.push(`model_reasoning_effort = "${cfg.modelReasoningEffort}"`);
+
+  // approval_policy: permissions.json wins, fallback omitted (Codex uses its own default)
+  const approvalMode = permissions?.codex?.approvalMode;
+  if (approvalMode) {
+    lines.push(`approval_policy = "${approvalMode}"`);
+  }
+
   lines.push("");
   lines.push("[windows]");
-  lines.push(`sandbox = "${cfg.sandbox}"`);
+  const sandbox = permissions?.codex?.sandbox ?? cfg.sandbox;
+  lines.push(`sandbox = "${sandbox}"`);
   lines.push("");
 
-  // Project trust levels
-  for (const [path, level] of Object.entries(cfg.trustedProjects)) {
+  // Project trust levels: merge permissions.json entries over build config defaults
+  const trustedProjects = { ...cfg.trustedProjects, ...(permissions?.codex?.trustedProjects ?? {}) };
+  for (const [path, level] of Object.entries(trustedProjects)) {
     lines.push(`[projects.'${path}']`);
     lines.push(`trust_level = "${level}"`);
     lines.push("");

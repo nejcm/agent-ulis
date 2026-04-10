@@ -3,8 +3,8 @@ import { join } from "node:path";
 import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
-import type { McpConfig } from "../schema.js";
-import { writeFile, cleanDir, copySkillDirs, copyDir, fileExists } from "../utils/fs.js";
+import type { McpConfig, PermissionsConfig } from "../schema.js";
+import { cleanDir, copyDir, copySkillDirs, fileExists, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
@@ -17,6 +17,7 @@ export function generateCursor(
   aiDir: string,
   outDir: string,
   cfg: BuildConfig,
+  permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
   log.header("Cursor");
@@ -96,6 +97,18 @@ export function generateCursor(
   const output = { mcpServers };
   writeFile(join(outDir, "mcp.json"), JSON.stringify(output, null, 2));
   log.success("mcp.json");
+
+  // Generate ~/.cursor/permissions.json (mcpAllowlist + terminalAllowlist)
+  if (permissions?.cursor) {
+    const cp = permissions.cursor;
+    const cursorPerms: Record<string, unknown> = {};
+    if (cp.mcpAllowlist?.length) cursorPerms.mcpAllowlist = cp.mcpAllowlist;
+    if (cp.terminalAllowlist?.length) cursorPerms.terminalAllowlist = cp.terminalAllowlist;
+    if (Object.keys(cursorPerms).length > 0) {
+      writeFile(join(outDir, "permissions.json"), JSON.stringify(cursorPerms, null, 2));
+      log.success("permissions.json");
+    }
+  }
 
   // Copy raw files (common first, then platform-specific to allow overrides)
   const rawCommon = join(aiDir, "raw", "common");

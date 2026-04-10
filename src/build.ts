@@ -6,6 +6,7 @@ import { generateCodex } from "./generators/codex.js";
 import { generateCursor } from "./generators/cursor.js";
 import { generateOpencode } from "./generators/opencode.js";
 import { parseAgents } from "./parsers/agent.js";
+import { loadPermissions } from "./parsers/permissions.js";
 import { parseSkills } from "./parsers/skill.js";
 import type { Platform } from "./platforms.js";
 import { PLATFORMS, uniquePlatforms } from "./platforms.js";
@@ -59,6 +60,9 @@ export function runBuild(options: BuildOptions = {}): readonly Platform[] {
   const buildConfig = loadBuildConfig(aiDir);
   logger.success(`Loaded build config`);
 
+  const permissions = loadPermissions(aiDir);
+  logger.success(`Loaded permissions config`);
+
   logger.header("Validation");
   const diagnostics: readonly Diagnostic[] = [
     ...validateCrossRefs(agents, skills, mcp),
@@ -87,16 +91,16 @@ export function runBuild(options: BuildOptions = {}): readonly Platform[] {
     const outDir = join(generatedDir, target);
     switch (target) {
       case "opencode":
-        generateOpencode(agents, skills, mcp, aiDir, outDir, buildConfig);
+        generateOpencode(agents, skills, mcp, aiDir, outDir, buildConfig, permissions);
         break;
       case "claude":
-        generateClaude(agents, skills, mcp, plugins, aiDir, outDir, buildConfig);
+        generateClaude(agents, skills, mcp, plugins, aiDir, outDir, buildConfig, permissions);
         break;
       case "codex":
-        generateCodex(agents, skills, mcp, aiDir, outDir, buildConfig);
+        generateCodex(agents, skills, mcp, aiDir, outDir, buildConfig, permissions);
         break;
       case "cursor":
-        generateCursor(agents, skills, mcp, aiDir, outDir, buildConfig);
+        generateCursor(agents, skills, mcp, aiDir, outDir, buildConfig, permissions);
         break;
     }
   }

@@ -58,3 +58,28 @@ export type OpenCodePermissionAction = (typeof OPENCODE_PERMISSION_ACTIONS)[numb
 // Shell types (used in skill Claude platform override)
 export const SHELL_TYPES = ["bash", "powershell"] as const;
 export type ShellType = (typeof SHELL_TYPES)[number];
+
+// Codex approval modes
+export const CODEX_APPROVAL_MODES = ["suggest", "auto-edit", "full-auto"] as const;
+export type CodexApprovalMode = (typeof CODEX_APPROVAL_MODES)[number];
+
+// OpenCode permission tool keys
+export const OPENCODE_PERMISSION_TOOLS = [
+  "read",
+  "edit",
+  "glob",
+  "grep",
+  "list",
+  "external_directory",
+  "bash",
+  "task",
+  "skill",
+  "question",
+  "webfetch",
+  "websearch",
+  "codesearch",
+  "lsp",
+  "todowrite",
+  "doom_loop",
+] as const;
+export type OpenCodePermissionTool = (typeof OPENCODE_PERMISSION_TOOLS)[number];

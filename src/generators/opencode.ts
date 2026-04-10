@@ -4,7 +4,7 @@ import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { parseCommands } from "../parsers/command.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
-import type { McpConfig } from "../schema.js";
+import type { McpConfig, PermissionsConfig } from "../schema.js";
 import { cleanDir, copyDir, copySkillDirs, fileExists, readFile, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
@@ -17,6 +17,7 @@ export function generateOpencode(
   aiDir: string,
   outDir: string,
   buildConfig: BuildConfig,
+  permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
   log.header("OpenCode");
@@ -111,18 +112,10 @@ export function generateOpencode(
     log.dim(`  mcp: ${name} (${server.type})`);
   }
 
-  // Build permission block from BUILD_CONFIG (overridable via .ai/global/build.config.json)
+  // Build permission block from permissions.json (flat top-level keys per OpenCode schema)
   const permissionBlock: Record<string, unknown> = {
-    skill: config.skillAllowlist,
-    bash: config.bashAllowlist,
-    tool: config.toolPermissions,
+    ...(permissions?.opencode?.permission ?? {}),
   };
-  if (Object.keys(config.readAllowlist).length > 0) {
-    permissionBlock.read = config.readAllowlist;
-  }
-  if (Object.keys(config.externalDirectoryAllowlist).length > 0) {
-    permissionBlock.external_directory = config.externalDirectoryAllowlist;
-  }
 
   // Assemble opencode.json
   const opencodeJson = {

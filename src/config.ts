@@ -33,11 +33,6 @@ export interface BuildConfig {
       readonly smallModel: string;
       readonly schema: string;
       readonly agentNameMap: Readonly<Record<string, string>>;
-      readonly bashAllowlist: Readonly<Record<string, "ask" | "allow" | "deny">>;
-      readonly skillAllowlist: Readonly<Record<string, "ask" | "allow" | "deny">>;
-      readonly toolPermissions: Readonly<Record<string, "ask" | "allow" | "deny">>;
-      readonly readAllowlist: Readonly<Record<string, "ask" | "allow" | "deny">>;
-      readonly externalDirectoryAllowlist: Readonly<Record<string, "ask" | "allow" | "deny">>;
     };
     readonly codex: {
       readonly model: string;
@@ -80,32 +75,6 @@ export const BUILD_CONFIG: BuildConfig = {
         devops: "devops-engineer",
         architect: "code-architect",
       },
-      bashAllowlist: {
-        "*": "ask",
-        "bq query*": "allow",
-        "bun run build:*": "allow",
-        "bun run lint:file:*": "allow",
-        "bun run test:*": "allow",
-        "bun run test:file:*": "allow",
-        "bun test:*": "allow",
-        "cc:*": "allow",
-        "comm:*": "allow",
-        "find*": "allow",
-      },
-      skillAllowlist: {
-        "*": "ask",
-        "read-*": "allow",
-        "search-*": "allow",
-        "internal-*": "deny",
-      },
-      toolPermissions: {
-        bash: "ask",
-        write: "ask",
-        edit: "ask",
-        read: "allow",
-      },
-      readAllowlist: {},
-      externalDirectoryAllowlist: {},
     },
     codex: {
       model: "gpt-5.4",

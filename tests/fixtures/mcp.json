@@ -1,0 +1,23 @@
+{
+  "servers": {
+    "test-local": {
+      "type": "local",
+      "command": "node",
+      "args": ["./mcp-server.js"],
+      "env": {
+        "API_KEY": "${TEST_API_KEY}"
+      }
+    },
+    "test-remote": {
+      "type": "remote",
+      "url": "https://mcp.example.com/sse",
+      "headers": {
+        "Authorization": "Bearer ${TEST_REMOTE_TOKEN}"
+      },
+      "localFallback": {
+        "command": "node",
+        "args": ["./mcp-fallback.js"]
+      }
+    }
+  }
+}

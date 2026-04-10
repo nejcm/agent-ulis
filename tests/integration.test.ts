@@ -7,8 +7,8 @@
  * so the tests survive minor formatting changes while catching regressions
  * in generator logic.
  */
-import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { BUILD_CONFIG } from "../src/config.js";
@@ -39,7 +39,7 @@ beforeAll(() => {
   const plugins = PluginsConfigSchema.parse(JSON.parse(readFile(join(fixturesDir, "plugins.json"))));
 
   generateClaude(agents, skills, mcp, plugins, fixturesDir, join(outDir, "claude"), BUILD_CONFIG);
-  generateOpencode(agents, skills, mcp, plugins, fixturesDir, join(outDir, "opencode"), BUILD_CONFIG);
+  generateOpencode(agents, skills, mcp, fixturesDir, join(outDir, "opencode"), BUILD_CONFIG);
   generateCodex(agents, skills, mcp, fixturesDir, join(outDir, "codex"), BUILD_CONFIG);
   generateCursor(agents, skills, mcp, fixturesDir, join(outDir, "cursor"), BUILD_CONFIG);
 });
