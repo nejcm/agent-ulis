@@ -199,7 +199,7 @@ export function generateOpencode(
   }
 
   // Copy directories if they exist
-  const copyDirs = ["workflows", "docs"];
+  const copyDirs = ["docs"];
   for (const dir of copyDirs) {
     const src = join(aiDir, dir);
     if (fileExists(src)) {

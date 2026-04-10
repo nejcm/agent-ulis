@@ -98,7 +98,6 @@ Generators iterate servers via the shared `mcpServersFor(mcp, target)` helper in
     agents/           # canonical agent definitions → see agents/README.md
     skills/           # skill definitions           → see skills/README.md
     commands/         # slash commands              → see commands/README.md
-    workflows/        # workflow checklists         → see workflows/README.md
     mcp.json          # Canonical MCP server definitions
     plugins.json      # Claude Code marketplace plugins/skills
     guardrails.md     # Cost controls and rate limits
@@ -138,10 +137,10 @@ src/
 | Source                               | OpenCode                                     | Claude Code                                      | Codex                   | Cursor     |
 | ------------------------------------ | -------------------------------------------- | ------------------------------------------------ | ----------------------- | ---------- |
 | `agents/*.md`                        | `opencode.json` agent blocks + `agents/` dir | `rules/common/agents.md` (generated)             | Instruction sections    | —          |
-| `guardrails.md`, `workflows/`        | —                                            | `rules/common/guardrails.md`, `rules/workflows/` | Appended to `AGENTS.md` | —          |
+| `guardrails.md`                      | —                                            | `rules/common/guardrails.md`                     | Appended to `AGENTS.md` | —          |
 | `mcp.json`                           | `opencode.json` mcp block                    | `settings.json` mcpServers                       | `config.toml`           | `mcp.json` |
 | `plugins.json`                       | Plugin array                                 | `settings.json` enabledPlugins                   | —                       | —          |
-| `skills/`, `commands/`, `workflows/` | Copied as-is                                 | —                                                | —                       | —          |
+| `skills/`, `commands/`               | Copied as-is                                 | —                                                | —                       | —          |
 
 ### Adding a new generator
 

@@ -16,7 +16,6 @@ ULIS is a build system that lets you define AI agent configurations **once** and
 ├── mcp.json          ─────►  └── cursor/   (agents/*.mdc, skills/, mcp.json)
 ├── plugins.json
 ├── guardrails.md
-├── workflows/
 └── build.config.json   ◄─── optional: per-platform overrides over BUILD_CONFIG defaults
 ```
 

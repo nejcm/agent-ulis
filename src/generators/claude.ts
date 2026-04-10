@@ -137,12 +137,6 @@ export function generateClaude(
     log.success("rules/common/guardrails.md");
   }
 
-  // Copy workflows as rules
-  const workflowsSrc = join(aiDir, "workflows");
-  if (fileExists(workflowsSrc)) {
-    copyDir(workflowsSrc, join(outDir, "rules", "workflows"));
-    log.success("rules/workflows/");
-  }
 
 
   // Generate native Claude Code subagent files (YAML frontmatter + body)
