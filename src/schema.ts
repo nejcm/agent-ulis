@@ -296,7 +296,7 @@ export const GlobalSkillSchema = z.object({
 });
 
 const sharedPluginsSchema = z.object({
-  plugins: z.array(ClaudePluginSchema),
+  plugins: z.array(ClaudePluginSchema).default([]),
   skills: z.array(GlobalSkillSchema).default([]),
 });
 
