@@ -56,3 +56,11 @@ The build system reads these files and generates:
 2. Set `claude.mapping`, `codex.mapping` as appropriate
 3. Run `bun run build` from the repo root to regenerate all tool configs
 4. Run `bun run install:configs` to deploy
+
+## Temperature Strategy
+
+| Range     | Agents                                                          | Rationale                        |
+| --------- | --------------------------------------------------------------- | -------------------------------- |
+| `0.0`     | migration, security, tester                                     | Deterministic — no guessing      |
+| `0.1–0.2` | builder, refactor, devops, documentation, performance, reviewer | Consistent but slightly adaptive |
+| `0.3`     | architect, planner, debugger                                    | Exploratory analysis             |
