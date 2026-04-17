@@ -326,7 +326,7 @@ function installSkills(
 
   for (const skill of skills) {
     const npxArgs = ["skills@latest", "add", skill.name, ...agentFlags, "--yes", ...(skill.args ?? [])];
-    const result = spawnSync("npx", npxArgs, { stdio: "ignore" });
+    const result = spawnSync("npx", npxArgs, { stdio: "ignore", cwd: homedir() });
     if (result.status !== 0) {
       logWarn(logger, `Failed to install ${platform} skill: ${skill.name}`);
       continue;

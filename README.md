@@ -250,7 +250,6 @@ bun run clean              # Delete generated/
 bun run install:deps       # Install build dependencies
 bun run install:configs    # Deploy to home directory
 bun run install:skill      # Install a skill from npx skills@latest into .ai/global/skills/
-bun run rebuild            # Force rebuild
 bun run format             # Format with [Oxfmt](https://oxc.rs/docs/guide/usage/formatter.html)
 bun run format:check       # Check formatting (CI-friendly)
 bun run tui                # Launch the interactive generator/install UI
