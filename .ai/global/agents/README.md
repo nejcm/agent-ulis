@@ -41,24 +41,6 @@ cursor:
 | `claude.mapping` | `rule`, `skill`, `skip`   | How the agent appears in Claude Code                          |
 | `codex.mapping`  | `instruction`, `skip`     | How the agent appears in Codex                                |
 
-## Agents
-
-| Agent           | Model  | Read-only | Purpose                                                 |
-| --------------- | ------ | --------- | ------------------------------------------------------- |
-| `planner`       | haiku  | yes       | Task decomposition, spec artifacts, acceptance criteria |
-| `builder`       | sonnet | no        | Feature implementation against specs                    |
-| `tester`        | haiku  | no        | TDD, test writing, test execution                       |
-| `reviewer`      | sonnet | yes       | Code review, quality assessment                         |
-| `architect`     | sonnet | yes       | System design, ADRs, API contracts                      |
-| `security`      | sonnet | yes       | Security audits, vulnerability analysis                 |
-| `debugger`      | sonnet | no        | Root cause analysis, bug fixes                          |
-| `refactor`      | sonnet | no        | Code cleanup, simplification                            |
-| `performance`   | sonnet | yes       | Profiling, optimization recommendations                 |
-| `documentation` | haiku  | yes       | API docs, technical writing                             |
-| `release`       | haiku  | no        | Versioning, changelogs, release notes                   |
-| `devops`        | sonnet | no        | CI/CD, Docker, infrastructure                           |
-| `migration`     | sonnet | no        | Database schema changes, data migrations                |
-
 ## How It's Used
 
 The build system reads these files and generates:
