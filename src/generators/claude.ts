@@ -2,8 +2,9 @@ import { join } from "node:path";
 
 import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
-import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
-import type { McpConfig, PermissionsConfig, PluginsConfig, ToolPermissions } from "../schema.js";
+import { parseCommands } from "../parsers/command.js";
+import type { ParsedSkill } from "../parsers/skill.js";
+import type { McpConfig, PermissionsConfig, PluginsConfig } from "../schema.js";
 import { cleanDir, copyDir, fileExists, readFile, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
@@ -158,99 +159,34 @@ export function generateClaude(
     log.success(`agents/ (${subagentCount} subagents generated)`);
   }
 
-  // Also generate agent commands (slash commands) for backward compat
-  let agentCommandCount = 0;
-  for (const agent of enabledAgents) {
-    const claudeAgentPlatform = agent.frontmatter.platforms?.claude;
-    const model = claudeAgentPlatform?.model ?? agent.frontmatter.model;
-    const allowedTools = mapTools(agent.frontmatter.tools, "claude", cfg);
+  // Generate commands from .ai/global/commands/ only
+  const commandsSrc = join(aiDir, "commands");
+  if (fileExists(commandsSrc)) {
+    const parsedCmds = parseCommands(commandsSrc);
+    for (const cmd of parsedCmds) {
+      const fm = cmd.frontmatter as Record<string, unknown>;
+      const claudePlatform = (fm.platforms as Record<string, unknown> | undefined)?.claude as
+        | Record<string, unknown>
+        | undefined;
+      const resolvedModel = claudePlatform?.model ?? fm.model;
 
-    const frontmatterLines = ["---", `description: ${agent.frontmatter.description}`, `model: ${model}`];
-    if (allowedTools.length > 0) {
-      frontmatterLines.push(`allowed-tools: ${allowedTools.join(", ")}`);
-    }
-    frontmatterLines.push("---");
+      const { platforms: _platforms, model: _model, ...rest } = fm;
+      const outData: Record<string, unknown> = { ...rest };
+      if (resolvedModel) outData.model = resolvedModel;
 
-    const commandContent = `${frontmatterLines.join("\n")}\n\n${agent.body}\n`;
-    writeFile(join(outDir, "commands", `${agent.name}.md`), commandContent);
-    agentCommandCount++;
-  }
-  if (agentCommandCount > 0) {
-    log.success(`commands/ (${agentCommandCount} agent commands generated)`);
-  }
-
-  // Generate skill commands from skills enabled for Claude
-  const enabledSkills = enabledSkillsFor(skills, "claude");
-  let skillCommandCount = 0;
-  for (const skill of enabledSkills) {
-    const fm = skill.frontmatter;
-    const skillName = fm.name ?? skill.name;
-    const claudePlatform = fm.platforms?.claude;
-
-    const lines: string[] = ["---"];
-    lines.push(`description: ${fm.description}`);
-
-    const skillModel = claudePlatform?.model ?? fm.model;
-    if (skillModel) {
-      lines.push(`model: ${skillModel}`);
-    }
-    if (fm.effort) {
-      lines.push(`effort: ${fm.effort}`);
-    }
-    if (fm.argumentHint) {
-      lines.push(`argument-hint: ${fm.argumentHint}`);
-    }
-    if (!fm.userInvocable) {
-      lines.push(`user-invocable: false`);
-    }
-    if (!fm.allowModelInvocation) {
-      lines.push(`disable-model-invocation: true`);
-    }
-    if (fm.tools) {
-      const toolList = mapTools(fm.tools as ToolPermissions, "claude", cfg);
-      if (toolList.length > 0) {
-        lines.push(`allowed-tools: ${toolList.join(", ")}`);
+      const lines = ["---"];
+      for (const [k, v] of Object.entries(outData)) {
+        if (v === undefined || v === null) continue;
+        if (typeof v === "boolean") lines.push(`${k}: ${v}`);
+        else if (typeof v === "number") lines.push(`${k}: ${v}`);
+        else if (Array.isArray(v)) lines.push(`${k}: ${JSON.stringify(v)}`);
+        else lines.push(`${k}: ${v}`);
       }
-    }
-    if (fm.isolation === "fork") {
-      lines.push(`context: fork`);
-    }
-    if (claudePlatform?.shell) {
-      lines.push(`shell: ${claudePlatform.shell}`);
-    }
-    if (fm.paths) {
-      const pathList = Array.isArray(fm.paths) ? fm.paths : [fm.paths];
-      lines.push(`paths: ${pathList.join(", ")}`);
-    }
-    if (fm.hooks) {
-      lines.push(`hooks:`);
-      for (const [event, entries] of Object.entries(fm.hooks)) {
-        if (!entries || (entries as unknown[]).length === 0) continue;
-        lines.push(`  ${event}:`);
-        for (const entry of entries as Array<{
-          matcher?: string;
-          command: string;
-        }>) {
-          if (entry.matcher) {
-            lines.push(`    - matcher: "${entry.matcher}"`);
-            lines.push(`      hooks:`);
-            lines.push(`        - type: command`);
-            lines.push(`          command: "${entry.command}"`);
-          } else {
-            lines.push(`    - type: command`);
-            lines.push(`      command: "${entry.command}"`);
-          }
-        }
-      }
-    }
-    lines.push("---");
+      lines.push("---");
 
-    const commandContent = `${lines.join("\n")}\n\n${skill.body}\n`;
-    writeFile(join(outDir, "commands", `${skillName}.md`), commandContent);
-    skillCommandCount++;
-  }
-  if (skillCommandCount > 0) {
-    log.success(`commands/ (${skillCommandCount} skill commands generated)`);
+      writeFile(join(outDir, "commands", cmd.filename), `${lines.join("\n")}\n\n${cmd.body}\n`);
+    }
+    log.success(`commands/ (${parsedCmds.length} commands generated)`);
   }
 
   // Build MCP servers block

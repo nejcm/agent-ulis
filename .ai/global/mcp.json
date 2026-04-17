@@ -33,6 +33,11 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
+    "context-mode": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "context-mode"]
+    },
     "linear": {
       "type": "remote",
       "url": "https://mcp.linear.app/mcp",
