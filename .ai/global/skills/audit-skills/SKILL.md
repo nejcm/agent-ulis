@@ -6,7 +6,7 @@ platforms:
   opencode:
     enabled: true
   claude:
-    model: claude-sonnet-4-6
+    model: sonnet
     enabled: true
   codex:
     enabled: true

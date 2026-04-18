@@ -1,10 +1,10 @@
 ---
 description: Remove stale worktrees for deleted branches
 subtask: true
-model: anthropic/claude-haiku-4-5-20251001
+model: haiku
 platforms:
   opencode:
-    model: anthropic/claude-haiku-4-5-20251001
+    model: haiku
 ---
 
 Remove stale worktrees under `./tree` when their branches no longer exist.

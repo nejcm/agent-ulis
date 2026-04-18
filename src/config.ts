@@ -67,7 +67,7 @@ export const BUILD_CONFIG: BuildConfig = {
       },
     },
     opencode: {
-      defaultModel: "anthropic/claude-sonnet-4-6",
+      defaultModel: "anthropic/sonnet",
       smallModel: "opencode/kimi-k2.5-free",
       schema: "https://opencode.ai/config.json",
       agentNameMap: {

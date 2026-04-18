@@ -11,7 +11,7 @@ tags: [specialized, read-write]
 
 platforms:
   claude:
-    model: claude-sonnet-4-6
+    model: sonnet
   codex:
     model: gpt-5.4-mini
   opencode:

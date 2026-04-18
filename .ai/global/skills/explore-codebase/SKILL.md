@@ -2,7 +2,7 @@
 name: explore-codebase
 description: Systematic codebase exploration methodology
 category: workflow
-model: claude-sonnet-4-6
+model: sonnet
 platforms:
   codex:
     model: gpt-5.4

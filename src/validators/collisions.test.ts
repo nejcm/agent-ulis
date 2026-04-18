@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 import type { ParsedAgent } from "../parsers/agent.js";
 import type { ParsedSkill } from "../parsers/skill.js";
@@ -11,7 +11,7 @@ function agent(name: string): ParsedAgent {
     body: "",
     frontmatter: {
       description: "",
-      model: "claude-sonnet-4-6",
+      model: "sonnet",
       tools: { read: true, write: false, edit: false, bash: false, search: false, browser: false },
       tags: [],
     } as AgentFrontmatter,

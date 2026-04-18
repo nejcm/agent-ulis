@@ -11,7 +11,7 @@ tags: [core, read-only]
 
 platforms:
   claude:
-    model: claude-opus-4-6
+    model: opus
   codex:
     model: gpt-5.4
   opencode:

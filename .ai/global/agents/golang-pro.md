@@ -11,7 +11,7 @@ tags: [specialized, read-write]
 
 platforms:
   claude:
-    model: claude-sonnet-4-6
+    model: sonnet
   opencode:
     mode: subagent
     rate_limit_per_hour: 10

@@ -1,10 +1,10 @@
 ---
 description: Stage and commit all changes with a generated message
 subtask: true
-model: anthropic/claude-haiku-4-5-20251001
+model: haiku
 platforms:
   opencode:
-    model: anthropic/claude-haiku-4-5-20251001
+    model: haiku
 ---
 
 Use the context below, then follow the steps.

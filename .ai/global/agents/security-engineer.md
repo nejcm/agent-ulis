@@ -11,7 +11,7 @@ tags: [specialized, read-write]
 
 platforms:
   claude:
-    model: claude-opus-4-6
+    model: opus
   opencode:
     mode: subagent
     rate_limit_per_hour: 5

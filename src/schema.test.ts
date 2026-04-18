@@ -19,9 +19,9 @@ describe("AgentFrontmatterSchema", () => {
     const result = AgentFrontmatterSchema.parse({
       description: "x",
       tools: {},
-      model: "claude-sonnet-4-6",
+      model: "sonnet",
     });
-    expect(result.model).toBe("claude-sonnet-4-6");
+    expect(result.model).toBe("sonnet");
   });
 
   it("rejects unknown model id", () => {
