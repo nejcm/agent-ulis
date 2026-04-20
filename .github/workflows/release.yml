@@ -49,8 +49,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "v${{ steps.pkg.outputs.version }}"
-          git push origin "v${{ steps.pkg.outputs.version }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/v${{ steps.pkg.outputs.version }}$"; then
+            echo "Tag v${{ steps.pkg.outputs.version }} already exists, skipping."
+          else
+            git tag "v${{ steps.pkg.outputs.version }}"
+            git push origin "v${{ steps.pkg.outputs.version }}"
+          fi
 
       - name: Setup Node for GitHub Packages
         uses: actions/setup-node@v6
