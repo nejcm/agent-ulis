@@ -14,7 +14,12 @@ You write the source once under `.ulis/` (per project) or `~/.ulis/` (global), a
 
 ```bash
 npm i -g @nejcm/ulis
-# or: bun add -g @nejcm/ulis
+```
+
+or
+
+```bash
+bun add -g @nejcm/ulis
 ```
 
 Requires Node 20+. Works with both Node and Bun runtimes.
