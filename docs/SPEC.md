@@ -1,3 +1,7 @@
+---
+title: Specification
+---
+
 # ULIS — Unified LLM Interface Specification
 
 Version `1.0.0` · Source: `src/schema/` · Targets: Claude Code, OpenCode, Codex, Cursor · CLI: `@nejcm/ulis`
@@ -64,7 +68,7 @@ Errors abort the build (exit code 1, no files written). Warnings print and the b
 
 `config.yaml` holds the minimum the CLI needs (`version`, `name`). All machine-specific defaults live in `src/config.ts` under `BUILD_CONFIG.platforms.<tool>`.
 
-> **Legacy note:** earlier versions read a `build.config.json` file for deep-merged overrides. That file is no longer loaded automatically; the example block below is kept as a reference for the override surface that will re-land on `config.yaml` in a future release.
+> **Legacy note:** older docs referenced only `build.config.json`. Current builds load `build.config.{yaml,yml,json}` from the source directory and deep-merge it over defaults.
 
 All machine-specific or platform-tunable constants live in `src/config.ts` under `BUILD_CONFIG.platforms.<tool>`. To override any leaf field for your repo, create `.ulis/build.config.json` with the same shape — it is **deep-merged** on top of the defaults at build time, so you only specify what you want to change.
 

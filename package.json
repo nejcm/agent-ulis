@@ -43,7 +43,10 @@
     "test:update": "bun test --update-snapshots",
     "test": "bun test",
     "tui": "tsx src/cli.ts tui",
-    "ulis": "tsx src/cli.ts"
+    "ulis": "tsx src/cli.ts",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "@cel-tui/core": "~0.4.1",
@@ -60,6 +63,7 @@
     "tsup": "~8.5.1",
     "tsx": "~4.21.0",
     "typescript": "~5.9.3",
+    "vitepress": "~1.6.4",
     "zod-to-json-schema": "~3.25.2"
   },
   "packageManager": "bun@1.3.10"

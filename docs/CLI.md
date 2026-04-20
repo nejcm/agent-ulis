@@ -1,4 +1,8 @@
-# CLI reference
+---
+title: CLI Reference
+---
+
+# CLI Reference
 
 `ulis <command> [options]`
 

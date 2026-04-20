@@ -18,6 +18,9 @@ Thumbs.db
 *.swp
 *.swo
 
+**/.vitepress/cache
+**/.vitepress/dist
+
 # Environment
 .env
 .env.local
