@@ -1,0 +1,18 @@
+# yaml-language-server: $schema={{schemaBase}}/skills.schema.json
+
+# Declarative skill installs per platform (via the `skills` CLI).
+# - "*"      applies to every platform
+# - "claude" / "codex" / "cursor" / "opencode" scope to one platform
+#
+# Example:
+#
+# "*":
+#   skills:
+#     - name: mattpocock/skills/grill-me
+#     - name: anthropics/skills
+#       args: ["--skill", "pdf"]
+#
+# claude:
+#   skills:
+#     - name: anthropics/skills
+#       args: ["--skill", "mcp-builder"]

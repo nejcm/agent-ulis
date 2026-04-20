@@ -6,8 +6,9 @@ import { basename, join, resolve } from "node:path";
 import { runBuild, type Logger } from "./build.js";
 import { ULIS_GENERATED_DIRNAME } from "./config.js";
 import { loadPlugins } from "./parsers/plugins.js";
+import { loadSkills } from "./parsers/skills.js";
 import { PLATFORM_LABELS, PLATFORMS, uniquePlatforms, type Platform } from "./platforms.js";
-import { type PluginsConfig } from "./schema.js";
+import { type PluginsConfig, type SkillsConfig } from "./schema.js";
 import { deepMerge } from "./utils/build-config.js";
 
 export interface InstallOptions {
@@ -90,10 +91,11 @@ export function runInstall(options: InstallOptions): readonly Platform[] {
   }
 
   const plugins = loadPlugins(sourceDir);
+  const skillsConfig = loadSkills(sourceDir);
 
   const timestamp = makeTimestamp();
   for (const platform of platforms) {
-    const context: InstallContext = { outputDir, destBase, backup, timestamp, plugins, logger };
+    const context: InstallContext = { outputDir, destBase, backup, timestamp, plugins, skills: skillsConfig, logger };
     switch (platform) {
       case "opencode":
         installOpencode(context);
@@ -110,7 +112,7 @@ export function runInstall(options: InstallOptions): readonly Platform[] {
     }
   }
 
-  const globalSkills = plugins["*"]?.skills ?? [];
+  const globalSkills = skillsConfig["*"]?.skills ?? [];
   if (globalSkills.length > 0) {
     logHeader(logger, "Installing Global Skills");
     installSkills(globalSkills, "*", logger);
@@ -126,6 +128,7 @@ interface InstallContext {
   readonly backup: boolean;
   readonly timestamp: string;
   readonly plugins: PluginsConfig;
+  readonly skills: SkillsConfig;
   readonly logger?: Logger;
 }
 
@@ -138,7 +141,7 @@ function installOpencode(context: InstallContext): void {
   cpSync(join(context.outputDir, "opencode"), targetDir, { recursive: true });
   logSuccess(context.logger, `OpenCode -> ${targetDir}`);
 
-  const skills = context.plugins.opencode?.skills ?? [];
+  const skills = context.skills.opencode?.skills ?? [];
   if (skills.length > 0) {
     installSkills(skills, "opencode", context.logger);
   }
@@ -168,7 +171,7 @@ function installClaude(context: InstallContext): void {
   copyPlatformContents(sourceDir, targetDir, context.logger, new Set(["settings.json"]));
   installClaudePlugins(context.plugins, context.logger);
 
-  const claudeSkills = context.plugins.claude?.skills ?? [];
+  const claudeSkills = context.skills.claude?.skills ?? [];
   if (claudeSkills.length > 0) {
     installSkills(claudeSkills, "claude", context.logger);
   }
@@ -181,7 +184,7 @@ function installCodex(context: InstallContext): void {
   ensureDir(targetDir);
   copyPlatformContents(join(context.outputDir, "codex"), targetDir, context.logger);
 
-  const skills = context.plugins.codex?.skills ?? [];
+  const skills = context.skills.codex?.skills ?? [];
   if (skills.length > 0) {
     installSkills(skills, "codex", context.logger);
   }
@@ -210,7 +213,7 @@ function installCursor(context: InstallContext): void {
 
   copyPlatformContents(sourceDir, targetDir, context.logger, new Set(["mcp.json"]));
 
-  const skills = context.plugins.cursor?.skills ?? [];
+  const skills = context.skills.cursor?.skills ?? [];
   if (skills.length > 0) {
     installSkills(skills, "cursor", context.logger);
   }
@@ -307,11 +310,16 @@ function installClaudePlugins(plugins: PluginsConfig, logger?: Logger): void {
 
   for (const plugin of claudePlugins) {
     const source = plugin.source === "github" && plugin.repo ? plugin.repo : plugin.name;
-    const result = spawnSync("claude", ["plugin", "add", "--from", source], { stdio: "ignore" });
+    const result = spawnSync("claude", ["plugin", "add", "--from", source], {
+      stdio: ["ignore", "ignore", "pipe"],
+      shell: process.platform === "win32",
+      encoding: "utf8",
+    });
     if (result.status === 0) {
       logSuccess(logger, `Plugin: ${plugin.name}`);
     } else {
-      logWarn(logger, `Failed to install plugin: ${plugin.name}`);
+      const detail = (result.stderr ?? "").trim().split("\n").pop() || result.error?.message || `exit ${result.status}`;
+      logWarn(logger, `Failed to install plugin: ${plugin.name} (${detail})`);
     }
   }
 }
@@ -340,9 +348,20 @@ function installSkills(
 
   for (const skill of skills) {
     const npxArgs = ["skills@latest", "add", skill.name, ...agentFlags, "--yes", ...(skill.args ?? [])];
-    const result = spawnSync("npx", npxArgs, { stdio: "ignore", cwd: homedir() });
+    const result = spawnSync("npx", npxArgs, {
+      stdio: ["ignore", "pipe", "pipe"],
+      cwd: homedir(),
+      shell: process.platform === "win32",
+      encoding: "utf8",
+    });
     if (result.status !== 0) {
-      logWarn(logger, `Failed to install ${platform} skill: ${skill.name}`);
+      const combined = `${result.stdout ?? ""}\n${result.stderr ?? ""}`
+        .replace(/\u001b\[[0-9;]*m/gu, "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      const detail = combined[combined.length - 1] || result.error?.message || `exit ${result.status}`;
+      logWarn(logger, `Failed to install ${platform} skill: ${skill.name} (${detail})`);
       continue;
     }
     logSuccess(logger, `${platform} skill: ${skill.name}`);
@@ -351,7 +370,10 @@ function installSkills(
 
 function commandExists(command: string): boolean {
   const lookupCommand = process.platform === "win32" ? "where" : "which";
-  const result = spawnSync(lookupCommand, [command], { stdio: "ignore" });
+  const result = spawnSync(lookupCommand, [command], {
+    stdio: "ignore",
+    shell: process.platform === "win32",
+  });
   return result.status === 0;
 }
 

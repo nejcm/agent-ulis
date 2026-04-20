@@ -9,7 +9,13 @@ import { join, resolve } from "node:path";
 
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-import { AgentFrontmatterSchema, McpConfigSchema, PluginsConfigSchema, SkillFrontmatterSchema } from "../schema.js";
+import {
+  AgentFrontmatterSchema,
+  McpConfigSchema,
+  PluginsConfigSchema,
+  SkillFrontmatterSchema,
+  SkillsConfigSchema,
+} from "../schema.js";
 
 const outDir = resolve(join(import.meta.dirname, "../..", "docs"));
 mkdirSync(outDir, { recursive: true });
@@ -106,6 +112,7 @@ const sections = [
   renderSection("Skill", SkillFrontmatterSchema),
   renderSection("MCP Config", McpConfigSchema),
   renderSection("Plugins Config", PluginsConfigSchema),
+  renderSection("Skills Config", SkillsConfigSchema),
 ];
 
 const header = `# ULIS Field Reference

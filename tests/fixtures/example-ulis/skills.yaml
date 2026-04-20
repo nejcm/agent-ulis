@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=./node_modules/@nejcm/ulis/dist/schemas/skills.schema.json
+
+"*":
+  skills:
+    - name: vercel-labs/skills
+      args:
+        - --skill
+        - find-skills
+    - name: https://github.com/anthropics/skills
+      args:
+        - --skill
+        - mcp-builder
+    - name: microsoft/playwright-cli
+      args:
+        - --skill
+        - playwright-cli
+    - name: mattpocock/skills/grill-me
+    - name: mattpocock/skills/domain-model
+    - name: mattpocock/skills/to-prd
+    - name: mattpocock/skills/write-a-skill
+    - name: mattpocock/skills/design-an-interface
+    - name: mattpocock/skills/request-refactor-plan

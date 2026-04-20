@@ -64,23 +64,39 @@ const PERMISSIONS_TEMPLATE = `# yaml-language-server: $schema={{schemaBase}}/per
 
 const PLUGINS_TEMPLATE = `# yaml-language-server: $schema={{schemaBase}}/plugins.schema.json
 
-# Declarative skill and plugin installs per platform.
+# Declarative Claude Code marketplace plugin installs.
+# Only "claude" is meaningful here today — other platforms don't have a
+# marketplace concept. Skills live in skills.yaml.
+#
+# Example:
+#
+# claude:
+#   plugins:
+#     - name: frontend-design
+#       source: official
+#     - name: everything-claude-code
+#       source: github
+#       repo: affaan-m/everything-claude-code
+`;
+
+const SKILLS_TEMPLATE = `# yaml-language-server: $schema={{schemaBase}}/skills.schema.json
+
+# Declarative skill installs per platform (via the \`skills\` CLI).
 # - "*"      applies to every platform
-# - "claude" applies to Claude Code only (can also install marketplace plugins)
-# - "codex", "cursor", "opencode" apply to their respective tools
+# - "claude" / "codex" / "cursor" / "opencode" scope to one platform
 #
 # Example:
 #
 # "*":
 #   skills:
 #     - name: mattpocock/skills/grill-me
+#     - name: anthropics/skills
+#       args: ["--skill", "pdf"]
 #
 # claude:
-#   plugins:
-#     - name: frontend-design
-#       source: official
 #   skills:
-#     - name: anthropics/skills/pdf
+#     - name: anthropics/skills
+#       args: ["--skill", "mcp-builder"]
 `;
 
 const GUARDRAILS_TEMPLATE = `# Guardrails
@@ -122,6 +138,10 @@ export function renderPermissions(context: ScaffoldContext): string {
 
 export function renderPlugins(context: ScaffoldContext): string {
   return substitute(PLUGINS_TEMPLATE, context);
+}
+
+export function renderSkills(context: ScaffoldContext): string {
+  return substitute(SKILLS_TEMPLATE, context);
 }
 
 export function renderGuardrails(context: ScaffoldContext): string {

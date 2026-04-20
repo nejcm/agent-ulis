@@ -10,6 +10,7 @@ import {
   renderMcp,
   renderPermissions,
   renderPlugins,
+  renderSkills,
   type ScaffoldContext,
 } from "../scaffold/index.js";
 import { log } from "../utils/logger.js";
@@ -51,6 +52,7 @@ export async function initCmd(options: InitOptions = {}): Promise<void> {
   writeFileSync(join(targetDir, "mcp.yaml"), renderMcp(context));
   writeFileSync(join(targetDir, "permissions.yaml"), renderPermissions(context));
   writeFileSync(join(targetDir, "plugins.yaml"), renderPlugins(context));
+  writeFileSync(join(targetDir, "skills.yaml"), renderSkills(context));
   writeFileSync(join(targetDir, "guardrails.md"), renderGuardrails(context));
 
   log.success(`Scaffolded ${targetDir}`);

@@ -14,7 +14,8 @@ ULIS is a CLI (`ulis`) that lets you define AI agent configurations **once** and
 ├── skills/*/         ─────►  ├── opencode/ (opencode.json, agents/, skills/)
 │   SKILL.md                  ├── codex/    (config.toml, agents/*.toml, AGENTS.md)
 ├── mcp.yaml          ─────►  └── cursor/   (agents/*.mdc, skills/, mcp.json)
-├── plugins.yaml
+├── plugins.yaml         (Claude marketplace plugins)
+├── skills.yaml          (external skill installs)
 ├── permissions.yaml
 ├── guardrails.md
 └── config.yaml          ◄─── minimal: version + name (room to grow)
@@ -31,7 +32,7 @@ The generated tree is then copied to the per-platform destination (`./.claude/` 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Source: .ulis/  (or ~/.ulis/)                          │
-│  agents/*.md  skills/*/SKILL.md  mcp.yaml  plugins.yaml │
+│  agents/  skills/  mcp.yaml  plugins.yaml  skills.yaml  │
 └────────────────────────┬────────────────────────────────┘
                          │ gray-matter + Zod parse
                          ▼
@@ -212,42 +213,48 @@ Defined once in `.ulis/mcp.yaml` (JSON is also accepted for backwards compatibil
 
 Environment variables use `${VAR}` syntax everywhere. The build translates to platform-specific syntax (OpenCode headers use `{env:VAR}`).
 
-### 3.4 Plugin / Skill registry entry
+### 3.4 Plugin / Skill registry entries
 
-Defined in `.ulis/plugins.yaml` (JSON also accepted). The file is keyed by platform name or the special `"*"` wildcard:
+Declarative installs are split into two files:
 
-```json
-{
-  "*": {
-    "skills": [
-      { "name": "mattpocock/skills/grill-me" },
-      { "name": "vercel-labs/agent-skills", "args": ["--skill", "find-skills"] }
-    ]
-  },
-  "claude": {
-    "plugins": [
-      {
-        "name": "everything-claude-code",
-        "source": "github",
-        "repo": "affaan-m/everything-claude-code"
-      },
-      { "name": "frontend-design", "source": "official" }
-    ],
-    "skills": []
-  },
-  "opencode": {
-    "skills": [{ "name": "some-opencode-skill" }]
-  }
-}
+**`.ulis/plugins.yaml`** — Claude Code marketplace plugins (`claude plugin add --from`):
+
+```yaml
+claude:
+  plugins:
+    - name: frontend-design
+      source: official
+    - name: everything-claude-code
+      source: github
+      repo: affaan-m/everything-claude-code
+```
+
+**`.ulis/skills.yaml`** — external skills installed via `npx skills@latest add`, keyed by platform or the `"*"` wildcard:
+
+```yaml
+"*":
+  skills:
+    - name: mattpocock/skills/grill-me
+    - name: vercel-labs/agent-skills
+      args: ["--skill", "find-skills"]
+
+claude:
+  skills:
+    - name: anthropics/skills
+      args: ["--skill", "mcp-builder"]
+
+opencode:
+  skills:
+    - name: some-opencode-skill
 ```
 
 **Key semantics:**
 
-| Key            | Effect during `install:configs`                                                          |
-| -------------- | ---------------------------------------------------------------------------------------- |
-| `"*"`          | `skills` are installed for **all** platforms via `npx skills@latest add -a <each-agent>` |
-| `"<platform>"` | `skills` are installed for that platform only (`-a <agent-name>`)                        |
-| `"claude"`     | `plugins` are installed via `claude plugin add --from <source>`                          |
+| File           | Key            | Effect during `ulis install`                                                             |
+| -------------- | -------------- | ---------------------------------------------------------------------------------------- |
+| `skills.yaml`  | `"*"`          | `skills` are installed for **all** platforms via `npx skills@latest add -a <each-agent>` |
+| `skills.yaml`  | `"<platform>"` | `skills` are installed for that platform only (`-a <agent-name>`)                        |
+| `plugins.yaml` | `"claude"`     | `plugins` are installed via `claude plugin add --from <source>`                          |
 
 Skills are installed **system-globally** — `npx skills@latest add` writes directly into each agent's known config directory. No files are staged in this repo.
 

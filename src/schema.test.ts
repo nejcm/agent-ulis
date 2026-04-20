@@ -1,6 +1,12 @@
 import { describe, expect, it } from "bun:test";
 
-import { AgentFrontmatterSchema, McpConfigSchema, PluginsConfigSchema, SkillFrontmatterSchema } from "./schema.js";
+import {
+  AgentFrontmatterSchema,
+  McpConfigSchema,
+  PluginsConfigSchema,
+  SkillFrontmatterSchema,
+  SkillsConfigSchema,
+} from "./schema.js";
 
 describe("AgentFrontmatterSchema", () => {
   it("parses minimal valid agent", () => {
@@ -216,18 +222,37 @@ describe("PluginsConfigSchema", () => {
     const result = PluginsConfigSchema.parse({
       claude: {
         plugins: [{ name: "foo", source: "official" }],
-        skills: [{ name: "bar" }],
       },
     });
     expect(result.claude?.plugins[0].name).toBe("foo");
   });
 
-  it("parses wildcard skills with optional args", () => {
+  it("parses config with both wildcard and claude sections", () => {
     const result = PluginsConfigSchema.parse({
+      "*": { plugins: [] },
+      claude: {
+        plugins: [{ name: "frontend-design", source: "official" }],
+      },
+    });
+    expect(result.claude?.plugins[0].source).toBe("official");
+  });
+
+  it("parses per-platform plugin sections", () => {
+    const result = PluginsConfigSchema.parse({
+      opencode: { plugins: [{ name: "oc-plugin", source: "official" }] },
+      codex: { plugins: [] },
+      cursor: { plugins: [] },
+    });
+    expect(result.opencode?.plugins[0].name).toBe("oc-plugin");
+  });
+});
+
+describe("SkillsConfigSchema", () => {
+  it("parses wildcard skills with optional args", () => {
+    const result = SkillsConfigSchema.parse({
       "*": {
-        plugins: [],
         skills: [
-          { name: "mattpocock/skills/write-a-prd" },
+          { name: "mattpocock/skills/grill-me" },
           { name: "https://skills.sh/vercel-labs/skills", args: ["--skill", "find-skills"] },
         ],
       },
@@ -236,34 +261,12 @@ describe("PluginsConfigSchema", () => {
     expect(result["*"]?.skills[1].args).toEqual(["--skill", "find-skills"]);
   });
 
-  it("parses config with both wildcard and claude sections", () => {
-    const result = PluginsConfigSchema.parse({
-      "*": { plugins: [], skills: [{ name: "mattpocock/skills/grill-me" }] },
-      claude: {
-        plugins: [{ name: "frontend-design", source: "official" }],
-        skills: [],
-      },
+  it("parses per-platform skill sections", () => {
+    const result = SkillsConfigSchema.parse({
+      opencode: { skills: [{ name: "opencode-skill" }] },
+      codex: { skills: [{ name: "codex-skill", args: ["--yes"] }] },
+      cursor: { skills: [] },
     });
-    expect(result["*"]?.skills[0].name).toBe("mattpocock/skills/grill-me");
-    expect(result.claude?.plugins[0].source).toBe("official");
-  });
-
-  it("parses per-platform sections for opencode, codex, and cursor", () => {
-    const result = PluginsConfigSchema.parse({
-      opencode: {
-        plugins: [{ name: "oc-plugin", source: "official" }],
-        skills: [{ name: "opencode-skill" }],
-      },
-      codex: {
-        plugins: [],
-        skills: [{ name: "codex-skill", args: ["--yes"] }],
-      },
-      cursor: {
-        plugins: [],
-        skills: [],
-      },
-    });
-    expect(result.opencode?.plugins[0].name).toBe("oc-plugin");
     expect(result.opencode?.skills[0].name).toBe("opencode-skill");
     expect(result.codex?.skills[0].args).toEqual(["--yes"]);
     expect(result.cursor?.skills).toHaveLength(0);

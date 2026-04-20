@@ -42,7 +42,8 @@ This creates:
 ├── config.yaml          # version + project name
 ├── mcp.yaml             # MCP server definitions
 ├── permissions.yaml     # per-platform access rules
-├── plugins.yaml         # external skills / Claude plugins
+├── plugins.yaml         # Claude marketplace plugin installs
+├── skills.yaml          # external skill installs (per platform)
 ├── guardrails.md        # operational guidelines (freeform)
 ├── agents/              # agent definitions (.md with frontmatter)
 ├── skills/              # skill definitions (SKILL.md per skill)
@@ -173,7 +174,21 @@ Each skill is a directory containing a `SKILL.md` (frontmatter + body) plus any 
 
 ### `plugins.yaml`
 
-Declare skills and plugins to install from external registries during `ulis install`. Keyed by platform or `"*"` (all platforms):
+Claude Code marketplace plugins installed via `claude plugin add`. Only `claude` is supported today:
+
+```yaml
+claude:
+  plugins:
+    - name: frontend-design
+      source: official
+    - name: everything-claude-code
+      source: github
+      repo: affaan-m/everything-claude-code
+```
+
+### `skills.yaml`
+
+External skills installed via `npx skills@latest add`. Keyed by platform or `"*"` (all platforms):
 
 ```yaml
 "*":
@@ -181,14 +196,14 @@ Declare skills and plugins to install from external registries during `ulis inst
     - name: mattpocock/skills/grill-me
     - name: vercel-labs/agent-skills
       args: ["--skill", "find-skills"]
+
 claude:
-  plugins:
-    - name: everything-claude-code
-      source: github
-      repo: affaan-m/everything-claude-code
+  skills:
+    - name: anthropics/skills
+      args: ["--skill", "mcp-builder"]
 ```
 
-`skills` entries run `npx skills@latest add <name> -a <agent> --yes [args...]`. Claude `plugins` entries run `claude plugin add --from <source>`.
+Each entry runs `npx skills@latest add <name> -a <agent> --yes [args...]` per target platform.
 
 ### `permissions.yaml`
 

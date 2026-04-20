@@ -15,6 +15,7 @@ import {
   PermissionsConfigSchema,
   PluginsConfigSchema,
   SkillFrontmatterSchema,
+  SkillsConfigSchema,
   UlisConfigSchema,
 } from "../schema.js";
 
@@ -27,6 +28,7 @@ const schemas: Array<{ name: string; schema: z.ZodType }> = [
   { name: "skill", schema: SkillFrontmatterSchema },
   { name: "mcp", schema: McpConfigSchema },
   { name: "plugins", schema: PluginsConfigSchema },
+  { name: "skills", schema: SkillsConfigSchema },
   { name: "permissions", schema: PermissionsConfigSchema },
 ];
 
