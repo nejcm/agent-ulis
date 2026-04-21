@@ -5,6 +5,7 @@ import { basename, join } from "node:path";
 import { ULIS_GENERATED_DIRNAME, ULIS_SOURCE_DIRNAME } from "../config.js";
 import {
   DEFAULT_SCHEMA_BASE,
+  renderBuildConfig,
   renderConfig,
   renderGuardrails,
   renderMcp,
@@ -49,6 +50,7 @@ export async function initCmd(options: InitOptions = {}): Promise<void> {
   }
 
   writeFileSync(join(targetDir, "config.yaml"), renderConfig(context));
+  writeFileSync(join(targetDir, "build.config.yaml"), renderBuildConfig(context));
   writeFileSync(join(targetDir, "mcp.yaml"), renderMcp(context));
   writeFileSync(join(targetDir, "permissions.yaml"), renderPermissions(context));
   writeFileSync(join(targetDir, "plugins.yaml"), renderPlugins(context));

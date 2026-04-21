@@ -159,7 +159,7 @@ export function generateClaude(
     log.success(`agents/ (${subagentCount} subagents generated)`);
   }
 
-  // Generate commands from .ai/global/commands/ only
+  // Generate commands from .ulis/global/commands/ only
   const commandsSrc = join(aiDir, "commands");
   if (fileExists(commandsSrc)) {
     const parsedCmds = parseCommands(commandsSrc);

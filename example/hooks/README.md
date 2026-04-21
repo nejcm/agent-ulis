@@ -44,7 +44,7 @@ The build system copies `hooks/` into the generated platform configs. Hook suppo
 
 ## Adding a New Hook
 
-1. Create `.ai/global/hooks/<name>.md` with frontmatter and instructions
+1. Create `.ulis/global/hooks/<name>.md` with frontmatter and instructions
 2. Set `event` and optionally scope it with `match`
 3. Run `bun run build` → `bun run install:configs`
 

@@ -52,7 +52,7 @@ The build system reads these files and generates:
 
 ## Adding a New Agent
 
-1. Create `.ai/global/agents/<name>.md` with frontmatter and prompt content
+1. Create `.ulis/global/agents/<name>.md` with frontmatter and prompt content
 2. Set `claude.mapping`, `codex.mapping` as appropriate
 3. Run `bun run build` from the repo root to regenerate all tool configs
 4. Run `bun run install:configs` to deploy

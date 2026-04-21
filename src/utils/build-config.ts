@@ -1,25 +1,21 @@
-import { BUILD_CONFIG, type BuildConfig } from "../config.js";
-import { loadConfigFile } from "./config-loader.js";
+import type { BuildConfig } from "../config.js";
+import { loadRequiredConfigFile } from "./config-loader.js";
 
 /**
- * Load optional `build.config.{yaml,yml,json}` from `sourceDir` and deep-merge
- * it over the code defaults from `BUILD_CONFIG`. The user file may be a
- * partial — only the leaves you specify are overridden.
- *
- * The result is always a fully-resolved `BuildConfig`. Returns `BUILD_CONFIG`
- * unchanged when no override file exists.
+ * Load required `build.config.{yaml,yml,json}` from the source tree.
+ * All build-time platform constants are user-owned and must live in this file.
  */
 export function loadBuildConfig(sourceDir: string): BuildConfig {
-  const parsed = loadConfigFile(sourceDir, "build.config");
-  if (parsed === undefined) {
-    return BUILD_CONFIG;
-  }
+  const parsed = loadRequiredConfigFile(sourceDir, "build.config");
 
   if (!isPlainObject(parsed)) {
     throw new Error(`build.config must be an object`);
   }
+  if (!isPlainObject(parsed.platforms)) {
+    throw new Error(`build.config.platforms must be an object`);
+  }
 
-  return deepMerge(BUILD_CONFIG, parsed) as BuildConfig;
+  return parsed as unknown as BuildConfig;
 }
 
 /**

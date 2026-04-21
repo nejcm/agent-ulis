@@ -9,7 +9,7 @@ import { fileExists, readFile } from "./fs.js";
  * `<baseName>.yml`, then `<baseName>.json`. Returns `undefined` if none exist.
  *
  * YAML is preferred for the ulis config tree. JSON remains supported as a
- * fallback to ease migration from pre-1.0 `.ai/global/` trees.
+ * fallback to ease migration from pre-1.0 `.ulis/global/` trees.
  */
 export function loadConfigFile(dir: string, baseName: string): unknown | undefined {
   const candidates = [`${baseName}.yaml`, `${baseName}.yml`, `${baseName}.json`];

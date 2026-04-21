@@ -11,6 +11,56 @@ version: 1
 name: {{name}}
 `;
 
+const BUILD_CONFIG_TEMPLATE = `# Build defaults consumed by ulis generators.
+# Keep this file in your source config folder so platform tuning stays user-owned.
+#
+# YAML or JSON is supported: build.config.yaml / build.config.yml / build.config.json
+
+platforms:
+  claude:
+    toolNames:
+      read: ["Read", "Glob", "Grep"]
+      write: ["Write"]
+      edit: ["Edit"]
+      bash: ["Bash"]
+      search: ["WebSearch", "WebFetch"]
+      browser: ["mcp__playwright__navigate", "mcp__playwright__screenshot"]
+
+  opencode:
+    defaultModel: anthropic/sonnet
+    smallModel: opencode/kimi-k2.5-free
+    schema: https://opencode.ai/config.json
+    agentNameMap:
+      debugger: debug
+      devops: devops-engineer
+      architect: code-architect
+
+  codex:
+    model: gpt-5.4
+    modelReasoningEffort: high
+    sandbox: elevated
+    trustedProjects: {}
+    mcpStartupTimeoutSec: 20
+
+  cursor:
+    toolNames:
+      read: ["read_file", "list_directory", "search_files"]
+      write: ["write_file"]
+      edit: ["edit_file"]
+      bash: ["run_terminal_command"]
+      search: ["web_search"]
+      browser: ["browser_action"]
+
+  forgecode:
+    toolNames:
+      read: ["read"]
+      write: ["write"]
+      edit: ["patch"]
+      bash: ["shell"]
+      search: ["search", "fetch"]
+      browser: ["mcp_*"]
+`;
+
 const MCP_TEMPLATE = `# yaml-language-server: $schema={{schemaBase}}/mcp.schema.json
 
 # Declare MCP (Model Context Protocol) servers that agents can use.
@@ -126,6 +176,10 @@ function substitute(content: string, context: ScaffoldContext): string {
 
 export function renderConfig(context: ScaffoldContext): string {
   return substitute(CONFIG_TEMPLATE, context);
+}
+
+export function renderBuildConfig(context: ScaffoldContext): string {
+  return substitute(BUILD_CONFIG_TEMPLATE, context);
 }
 
 export function renderMcp(context: ScaffoldContext): string {

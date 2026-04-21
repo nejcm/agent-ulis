@@ -11,7 +11,6 @@ import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { BUILD_CONFIG } from "../src/config.js";
 import { generateClaude } from "../src/generators/claude.js";
 import { generateCodex } from "../src/generators/codex.js";
 import { generateCursor } from "../src/generators/cursor.js";
@@ -20,6 +19,7 @@ import { generateOpencode } from "../src/generators/opencode.js";
 import { parseAgents } from "../src/parsers/agent.js";
 import { parseSkills } from "../src/parsers/skill.js";
 import { McpConfigSchema, PluginsConfigSchema } from "../src/schema.js";
+import { loadBuildConfig } from "../src/utils/build-config.js";
 import { readFile } from "../src/utils/fs.js";
 import { validateCollisions } from "../src/validators/collisions.js";
 import { validateCrossRefs } from "../src/validators/cross-refs.js";
@@ -38,12 +38,13 @@ beforeAll(() => {
   const skills = parseSkills(join(fixturesDir, "skills"));
   const mcp = McpConfigSchema.parse(JSON.parse(readFile(join(fixturesDir, "mcp.json"))));
   const plugins = PluginsConfigSchema.parse(JSON.parse(readFile(join(fixturesDir, "plugins.json"))));
+  const buildConfig = loadBuildConfig(fixturesDir);
 
-  generateClaude(agents, skills, mcp, plugins, fixturesDir, join(outDir, "claude"), BUILD_CONFIG);
-  generateOpencode(agents, skills, mcp, fixturesDir, join(outDir, "opencode"), BUILD_CONFIG);
-  generateCodex(agents, skills, mcp, fixturesDir, join(outDir, "codex"), BUILD_CONFIG);
-  generateCursor(agents, skills, mcp, fixturesDir, join(outDir, "cursor"), BUILD_CONFIG);
-  generateForgecode(agents, skills, mcp, fixturesDir, join(outDir, "forgecode"), BUILD_CONFIG);
+  generateClaude(agents, skills, mcp, plugins, fixturesDir, join(outDir, "claude"), buildConfig);
+  generateOpencode(agents, skills, mcp, fixturesDir, join(outDir, "opencode"), buildConfig);
+  generateCodex(agents, skills, mcp, fixturesDir, join(outDir, "codex"), buildConfig);
+  generateCursor(agents, skills, mcp, fixturesDir, join(outDir, "cursor"), buildConfig);
+  generateForgecode(agents, skills, mcp, fixturesDir, join(outDir, "forgecode"), buildConfig);
 });
 
 afterAll(() => {

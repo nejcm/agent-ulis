@@ -22,7 +22,7 @@ The build system copies `commands/` directly into `generated/opencode/commands/`
 
 ## Adding a New Command
 
-1. Create `.ai/global/commands/<name>.md` with a `description` in the frontmatter
+1. Create `.ulis/global/commands/<name>.md` with a `description` in the frontmatter
 2. Write the step-by-step instructions in the body
 3. Run `bun run build` from the repo root — the command will be included automatically
 4. Invoke it in OpenCode with `/<name>`

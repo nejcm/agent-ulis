@@ -16,12 +16,12 @@ tools/
 - Build-time helpers (e.g., a script that validates agent frontmatter)
 - Install helpers (e.g., a script that merges generated configs into platform locations)
 - Shared utilities called from `package.json` scripts
-- One-off automation scripts that support the `.ai/global` workflow
+- One-off automation scripts that support the `.ulis/global` workflow
 
 Do **not** put runtime agent skills here — those belong in `skills/`.
 
 ## Adding a New Tool
 
-1. Create the script under `.ai/global/tools/`
+1. Create the script under `.ulis/global/tools/`
 2. Wire it up in the repo's `package.json` scripts if needed
 3. Run `bun run build` if the tool affects the build output

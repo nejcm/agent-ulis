@@ -67,11 +67,9 @@ Errors abort the build (exit code 1, no files written). Warnings print and the b
 
 ## 2.1 Build configuration
 
-`config.yaml` holds the minimum the CLI needs (`version`, `name`). All machine-specific defaults live in `src/config.ts` under `BUILD_CONFIG.platforms.<tool>`.
+`config.yaml` holds the minimum CLI metadata (`version`, `name`).
 
-> **Legacy note:** older docs referenced only `build.config.json`. Current builds load `build.config.{yaml,yml,json}` from the source directory and deep-merge it over defaults.
-
-All machine-specific or platform-tunable constants live in `src/config.ts` under `BUILD_CONFIG.platforms.<tool>`. To override any leaf field for your repo, create `.ulis/build.config.json` with the same shape — it is **deep-merged** on top of the defaults at build time, so you only specify what you want to change.
+All machine-specific and platform-tunable constants are user-owned in `.ulis/build.config.{yaml,yml,json}`. The file is required at build time.
 
 Example:
 
@@ -102,7 +100,7 @@ Per-platform sections supported:
 | `opencode`  | `defaultModel`, `smallModel`, `modelMap`, `agentNameMap`, `bashAllowlist`, `skillAllowlist`, `toolPermissions`, `readAllowlist`, `externalDirectoryAllowlist` |
 | `forgecode` | `toolNames`                                                                                                                                                   |
 
-The file is optional. Without it, code defaults from `src/config.ts` are used unchanged.
+The file is required. `ulis init` scaffolds `build.config.yaml` with the full default shape.
 
 Capability mismatches are handled with **best-effort + comments**: if a target lacks native support for a field, the value is emitted as a comment in the generated file so reviewers can see it, and the build continues (no hard failure).
 

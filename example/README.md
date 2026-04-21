@@ -1,18 +1,18 @@
-# .ai/global
+# .ulis/global
 
 Canonical AI tool definitions shared across all platforms — Claude Code, OpenCode, Codex, and Cursor. This directory is the single source of truth; the build system generates platform-specific configs from it.
 
 ## Directory Structure
 
 ```
-.ai/global/
+.ulis/global/
 ├── agents/          # Agent definitions (model, temperature, tools, platform mappings)
 ├── commands/        # OpenCode slash commands (executable workflows)
 ├── hooks/           # Event-driven automation scripts (pre/post tool use, stop)
 ├── raw/             # Platform-specific source fragments injected verbatim into generated configs
 ├── skills/          # Reusable skill definitions invocable during sessions
 ├── tools/           # Shared utility scripts used by the build system
-├── build.config.json  # Per-repo overrides for build defaults
+├── build.config.yaml  # Required platform build/runtime defaults
 ├── guardrails.md      # Operational guidelines (cost controls, rate limits, security policies)
 ├── mcp.json           # MCP server configurations
 ├── permissions.json   # Per-platform access control rules
@@ -21,9 +21,9 @@ Canonical AI tool definitions shared across all platforms — Claude Code, OpenC
 
 ## Root Configuration Files
 
-### `build.config.json`
+### `build.config.yaml`
 
-Deep-merged on top of build defaults (`src/config.ts`). Only specify leaves you want to override. Supports per-platform keys: `codex.trustedProjects`, `opencode.readAllowlist`.
+Primary build/runtime config consumed by generators. `ulis init` writes the full default shape so users can tune it directly in their config folder.
 
 ### `mcp.json`
 
@@ -76,7 +76,7 @@ Documented operational policies for agents. **Not machine-enforced** — agents 
 ## Build & Deploy
 
 ```bash
-bun run build           # Regenerate all platform configs from .ai/global/
+bun run build           # Regenerate all platform configs from .ulis/global/
 bun run install:configs # Deploy generated configs to their platform locations
 ```
 
