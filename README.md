@@ -40,12 +40,10 @@ This creates:
 ```
 .ulis/
 ├── config.yaml          # version + project name
-├── build.config.yaml    # required platform build/runtime defaults
 ├── mcp.yaml             # MCP server definitions
 ├── permissions.yaml     # per-platform access rules
 ├── plugins.yaml         # Claude marketplace plugin installs
 ├── skills.yaml          # external skill installs (per platform)
-├── guardrails.md        # operational guidelines (freeform)
 ├── agents/              # agent definitions (.md with frontmatter)
 ├── skills/              # skill definitions (SKILL.md per skill)
 ├── commands/            # slash commands
@@ -115,12 +113,6 @@ ulis install --global   # deploys to ~/.claude/, ~/.codex/, ~/.cursor/, ~/.openc
 version: 1
 name: my-project
 ```
-
-### `build.config.yaml`
-
-Required build/runtime configuration for platform adapters (tool name mapping,
-default models, sandbox mode, etc.). You can also use `build.config.yml` or
-`build.config.json`.
 
 ### `mcp.yaml`
 

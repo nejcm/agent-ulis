@@ -1,7 +1,44 @@
-import type { BuildConfig } from "../config.js";
 import type { ToolPermissions } from "../schema.js";
 
 export type ToolPlatform = "claude" | "cursor" | "opencode" | "codex" | "forgecode";
+
+// mapping agent tool permissions to tool names for each platform
+const PLATFORM_TOOL_NAMES: Record<
+  Exclude<ToolPlatform, "opencode" | "codex">,
+  {
+    readonly read: readonly string[];
+    readonly write: readonly string[];
+    readonly edit: readonly string[];
+    readonly bash: readonly string[];
+    readonly search: readonly string[];
+    readonly browser: readonly string[];
+  }
+> = {
+  claude: {
+    read: ["Read", "Glob", "Grep"],
+    write: ["Write"],
+    edit: ["Edit"],
+    bash: ["Bash"],
+    search: ["WebSearch", "WebFetch"],
+    browser: ["mcp__playwright__navigate", "mcp__playwright__screenshot"],
+  },
+  cursor: {
+    read: ["read_file", "list_directory", "search_files"],
+    write: ["write_file"],
+    edit: ["edit_file"],
+    bash: ["run_terminal_command"],
+    search: ["web_search"],
+    browser: ["browser_action"],
+  },
+  forgecode: {
+    read: ["read"],
+    write: ["write"],
+    edit: ["patch"],
+    bash: ["shell"],
+    search: ["search", "fetch"],
+    browser: ["mcp_*"],
+  },
+};
 
 /**
  * Map canonical `ToolPermissions` to a flat list of platform-specific tool
@@ -12,17 +49,16 @@ export type ToolPlatform = "claude" | "cursor" | "opencode" | "codex" | "forgeco
  * Subagent allowlist (`tools.agent`) is appended for `claude` only — it is
  * the only platform that supports `Agent(name1, name2)` in `allowed-tools`.
  *
- * Tool name maps come from `BuildConfig.platforms.<tool>.toolNames`, so users
- * can rename a tool through `.ulis/build.config.*` without code changes.
+ * Tool name maps are internal ULIS defaults and not user-configurable.
  */
-export function mapTools(perms: ToolPermissions, platform: ToolPlatform, cfg: BuildConfig): string[] {
+export function mapTools(perms: ToolPermissions, platform: ToolPlatform): string[] {
   if (platform === "opencode" || platform === "codex") {
     // These platforms consume the structured `ToolPermissions` directly;
     // no flat tool name list is needed.
     return [];
   }
 
-  const names = cfg.platforms[platform].toolNames;
+  const names = PLATFORM_TOOL_NAMES[platform];
   const tools: string[] = [];
 
   if (perms.read) tools.push(...names.read);

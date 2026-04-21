@@ -9,7 +9,6 @@ import { loadPlugins } from "./parsers/plugins.js";
 import { loadSkills } from "./parsers/skills.js";
 import { PLATFORM_DIRS, PLATFORM_LABELS, PLATFORMS, platformConfigDir, uniquePlatforms, type Platform } from "./platforms.js";
 import { type PluginsConfig, type SkillsConfig } from "./schema.js";
-import { deepMerge } from "./utils/build-config.js";
 
 export interface InstallOptions {
   readonly platforms?: readonly Platform[];
@@ -279,6 +278,23 @@ function mergeSettingsJson(existingPath: string, generatedPath: string): Record<
   const existing = readJson(existingPath);
   const generated = readJson(generatedPath);
   return deepMerge(existing, generated);
+}
+
+function deepMerge<T>(base: T, override: unknown): T {
+  if (!isPlainObject(base) || !isPlainObject(override)) {
+    return override === undefined ? base : (override as T);
+  }
+
+  const result: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    if (value === undefined) continue;
+    if (isPlainObject(value) && isPlainObject(result[key])) {
+      result[key] = deepMerge(result[key], value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result as T;
 }
 
 function mergeCursorMcpJson(existingPath: string, generatedPath: string): Record<string, unknown> {

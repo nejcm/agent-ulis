@@ -13,7 +13,6 @@ import { loadPlugins } from "./parsers/plugins.js";
 import { parseSkills } from "./parsers/skill.js";
 import type { Platform } from "./platforms.js";
 import { PLATFORMS, uniquePlatforms } from "./platforms.js";
-import { loadBuildConfig } from "./utils/build-config.js";
 import { log } from "./utils/logger.js";
 import { validateCollisions } from "./validators/collisions.js";
 import { validateCrossRefs, type Diagnostic } from "./validators/cross-refs.js";
@@ -72,9 +71,6 @@ export function runBuild(options: BuildOptions): BuildResult {
   const plugins = loadPlugins(sourceDir);
   logger.success(`Parsed plugins config`);
 
-  const buildConfig = loadBuildConfig(sourceDir);
-  logger.success(`Loaded build config`);
-
   const permissions = loadPermissions(sourceDir);
   logger.success(`Loaded permissions config`);
 
@@ -106,19 +102,19 @@ export function runBuild(options: BuildOptions): BuildResult {
     const outDir = join(outputDir, target);
     switch (target) {
       case "opencode":
-        generateOpencode(agents, skills, mcp, sourceDir, outDir, buildConfig, permissions);
+        generateOpencode(agents, skills, mcp, sourceDir, outDir, permissions);
         break;
       case "claude":
-        generateClaude(agents, skills, mcp, plugins, sourceDir, outDir, buildConfig, permissions);
+        generateClaude(agents, skills, mcp, plugins, sourceDir, outDir, permissions);
         break;
       case "codex":
-        generateCodex(agents, skills, mcp, sourceDir, outDir, buildConfig, permissions);
+        generateCodex(agents, skills, mcp, sourceDir, outDir, permissions);
         break;
       case "cursor":
-        generateCursor(agents, skills, mcp, sourceDir, outDir, buildConfig, permissions);
+        generateCursor(agents, skills, mcp, sourceDir, outDir, permissions);
         break;
       case "forgecode":
-        generateForgecode(agents, skills, mcp, sourceDir, outDir, buildConfig);
+        generateForgecode(agents, skills, mcp, sourceDir, outDir);
         break;
     }
   }

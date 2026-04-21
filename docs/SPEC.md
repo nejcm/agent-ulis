@@ -22,7 +22,6 @@ ULIS is a CLI (`ulis`) that lets you define AI agent configurations **once** and
 ├── plugins.yaml         (Claude marketplace plugins)
 ├── skills.yaml          (external skill installs)
 ├── permissions.yaml
-├── guardrails.md
 └── config.yaml          ◄─── minimal: version + name (room to grow)
 ```
 
@@ -54,7 +53,7 @@ The generated tree is then copied to the per-platform destination (`./.claude/`,
 
 Each `generate*` function:
 
-1. Reads the canonical bundle and the resolved `BuildConfig`
+1. Reads the canonical bundle
 2. Maps canonical types (model aliases, tool groups, permission levels) to platform specifics
 3. Emits native files (YAML frontmatter, JSON, TOML, MDC)
 
@@ -69,38 +68,7 @@ Errors abort the build (exit code 1, no files written). Warnings print and the b
 
 `config.yaml` holds the minimum CLI metadata (`version`, `name`).
 
-All machine-specific and platform-tunable constants are user-owned in `.ulis/build.config.{yaml,yml,json}`. The file is required at build time.
-
-Example:
-
-```json
-{
-  "platforms": {
-    "codex": {
-      "trustedProjects": {
-        "C:\\Work\\Personal\\my-repo": "trusted"
-      }
-    },
-    "opencode": {
-      "readAllowlist": {
-        "C:/Work/some/path/*": "allow"
-      }
-    }
-  }
-}
-```
-
-Per-platform sections supported:
-
-| Platform    | Override-friendly fields                                                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claude`    | `modelMap`, `toolNames`                                                                                                                                       |
-| `cursor`    | `modelMap`, `toolNames`                                                                                                                                       |
-| `codex`     | `model`, `modelReasoningEffort`, `sandbox`, `trustedProjects`, `mcpStartupTimeoutSec`                                                                         |
-| `opencode`  | `defaultModel`, `smallModel`, `modelMap`, `agentNameMap`, `bashAllowlist`, `skillAllowlist`, `toolPermissions`, `readAllowlist`, `externalDirectoryAllowlist` |
-| `forgecode` | `toolNames`                                                                                                                                                   |
-
-The file is required. `ulis init` scaffolds `build.config.yaml` with the full default shape.
+Platform adapter defaults are internal to ULIS. If you need platform-native output customization, place those files under `raw/` (for example `raw/opencode/opencode.json` or `raw/codex/config.toml`) to override generated files.
 
 Capability mismatches are handled with **best-effort + comments**: if a target lacks native support for a field, the value is emitted as a comment in the generated file so reviewers can see it, and the build continues (no hard failure).
 
@@ -335,11 +303,11 @@ const skills = parseSkills(join(sourceDir, "skills"));
 const mcp = loadMcp(sourceDir);
 const plugins = loadPlugins(sourceDir);
 
-generateClaude(agents, skills, mcp, plugins, sourceDir, join(generatedDir, "claude"), buildConfig);
-generateOpencode(agents, skills, mcp, plugins, sourceDir, join(generatedDir, "opencode"), buildConfig);
-generateCodex(agents, skills, mcp, sourceDir, join(generatedDir, "codex"), buildConfig);
-generateCursor(agents, skills, mcp, sourceDir, join(generatedDir, "cursor"), buildConfig);
-generateForgecode(agents, skills, mcp, sourceDir, join(generatedDir, "forgecode"), buildConfig);
+generateClaude(agents, skills, mcp, plugins, sourceDir, join(generatedDir, "claude"));
+generateOpencode(agents, skills, mcp, sourceDir, join(generatedDir, "opencode"));
+generateCodex(agents, skills, mcp, sourceDir, join(generatedDir, "codex"));
+generateCursor(agents, skills, mcp, sourceDir, join(generatedDir, "cursor"));
+generateForgecode(agents, skills, mcp, sourceDir, join(generatedDir, "forgecode"));
 ```
 
 Parsing validates against Zod schemas and fails fast with a descriptive error if a field is invalid.

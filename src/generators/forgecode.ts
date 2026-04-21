@@ -1,6 +1,5 @@
 import { join } from "node:path";
 
-import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig } from "../schema.js";
@@ -23,7 +22,6 @@ export function generateForgecode(
   mcp: McpConfig,
   aiDir: string,
   outDir: string,
-  cfg: BuildConfig,
 ): void {
   cleanDir(outDir);
   log.header("ForgeCode");
@@ -32,7 +30,7 @@ export function generateForgecode(
   for (const agent of enabledAgents) {
     const fm = agent.frontmatter;
     const forgePlatform = fm.platforms?.forgecode;
-    const tools = mapTools(fm.tools, "forgecode", cfg);
+    const tools = mapTools(fm.tools, "forgecode");
     const model = forgePlatform?.model ?? fm.model;
 
     const lines: string[] = ["---"];

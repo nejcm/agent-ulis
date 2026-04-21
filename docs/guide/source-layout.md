@@ -13,7 +13,6 @@ The canonical source tree lives in `.ulis/` (or `~/.ulis/` in global mode).
 ├── permissions.yaml
 ├── plugins.yaml
 ├── skills.yaml
-├── guardrails.md
 ├── agents/
 ├── skills/
 ├── commands/

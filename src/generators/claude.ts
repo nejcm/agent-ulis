@@ -1,6 +1,5 @@
 import { join } from "node:path";
 
-import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { parseCommands } from "../parsers/command.js";
 import type { ParsedSkill } from "../parsers/skill.js";
@@ -11,7 +10,7 @@ import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
 import { mapTools } from "../utils/tool-mapper.js";
 
-function generateSubagentFrontmatter(agent: ParsedAgent, cfg: BuildConfig): string {
+function generateSubagentFrontmatter(agent: ParsedAgent): string {
   const { frontmatter: fm } = agent;
   const claudePlatform = fm.platforms?.claude;
   const lines: string[] = ["---"];
@@ -24,7 +23,7 @@ function generateSubagentFrontmatter(agent: ParsedAgent, cfg: BuildConfig): stri
     lines.push(`model: ${model}`);
   }
 
-  const allowedTools = mapTools(fm.tools, "claude", cfg);
+  const allowedTools = mapTools(fm.tools, "claude");
 
   // security.permissionLevel "readonly" → plan mode (read-only); toolPolicy.avoid → disallowedTools
   const disallowedTools = [...(claudePlatform?.disallowedTools ?? []), ...(fm.toolPolicy?.avoid ?? [])];
@@ -127,7 +126,6 @@ export function generateClaude(
   plugins: PluginsConfig,
   aiDir: string,
   outDir: string,
-  cfg: BuildConfig,
   permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
@@ -135,17 +133,10 @@ export function generateClaude(
 
   const enabledAgents = enabledAgentsFor(agents, "claude");
 
-  // Copy guardrails as a rule
-  const guardrailsSrc = join(aiDir, "guardrails.md");
-  if (fileExists(guardrailsSrc)) {
-    writeFile(join(outDir, "rules", "common", "guardrails.md"), readFile(guardrailsSrc));
-    log.success("rules/common/guardrails.md");
-  }
-
   // Generate native Claude Code subagent files (YAML frontmatter + body)
   let subagentCount = 0;
   for (const agent of enabledAgents) {
-    const frontmatter = generateSubagentFrontmatter(agent, cfg);
+    const frontmatter = generateSubagentFrontmatter(agent);
     const policyBlock = buildPolicyCommentBlock(agent.frontmatter, "md");
     const bodyWithPolicy = policyBlock ? `${policyBlock}\n${agent.body.trim()}` : agent.body.trim();
     const content = `${frontmatter}\n\n${bodyWithPolicy}\n`;
@@ -159,7 +150,7 @@ export function generateClaude(
     log.success(`agents/ (${subagentCount} subagents generated)`);
   }
 
-  // Generate commands from .ulis/global/commands/ only
+  // Generate commands from .ulis/commands/
   const commandsSrc = join(aiDir, "commands");
   if (fileExists(commandsSrc)) {
     const parsedCmds = parseCommands(commandsSrc);

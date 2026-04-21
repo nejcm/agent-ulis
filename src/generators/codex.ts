@@ -1,6 +1,5 @@
 import { join } from "node:path";
 
-import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig, PermissionsConfig } from "../schema.js";
@@ -9,6 +8,11 @@ import { cleanDir, copyDir, fileExists, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
+
+const CODEX_DEFAULT_MODEL = "gpt-5.4";
+const CODEX_DEFAULT_MODEL_REASONING_EFFORT = "high";
+const CODEX_DEFAULT_SANDBOX = "elevated";
+const CODEX_DEFAULT_MCP_STARTUP_TIMEOUT_SEC = 20;
 
 /**
  * Parse a headers map and emit the Codex TOML representation for an HTTP MCP server.
@@ -66,20 +70,18 @@ export function generateCodex(
   mcp: McpConfig,
   aiDir: string,
   outDir: string,
-  buildConfig: BuildConfig,
   permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
   log.header("Codex");
 
-  const cfg = buildConfig.platforms.codex;
   const enabledAgents = enabledAgentsFor(agents, "codex");
   const enabledSkills = enabledSkillsFor(skills, "codex");
   const lines: string[] = [];
 
   // Top-level config
-  lines.push(`model = "${cfg.model}"`);
-  lines.push(`model_reasoning_effort = "${cfg.modelReasoningEffort}"`);
+  lines.push(`model = "${CODEX_DEFAULT_MODEL}"`);
+  lines.push(`model_reasoning_effort = "${CODEX_DEFAULT_MODEL_REASONING_EFFORT}"`);
 
   // approval_policy: permissions.json wins, fallback omitted (Codex uses its own default)
   const approvalMode = permissions?.codex?.approvalMode;
@@ -89,12 +91,12 @@ export function generateCodex(
 
   lines.push("");
   lines.push("[windows]");
-  const sandbox = permissions?.codex?.sandbox ?? cfg.sandbox;
+  const sandbox = permissions?.codex?.sandbox ?? CODEX_DEFAULT_SANDBOX;
   lines.push(`sandbox = "${sandbox}"`);
   lines.push("");
 
-  // Project trust levels: merge permissions.json entries over build config defaults
-  const trustedProjects = { ...cfg.trustedProjects, ...(permissions?.codex?.trustedProjects ?? {}) };
+  // Project trust levels: merge permissions.json entries over ULIS defaults
+  const trustedProjects = permissions?.codex?.trustedProjects ?? {};
   for (const [path, level] of Object.entries(trustedProjects)) {
     lines.push(`[projects.'${path}']`);
     lines.push(`trust_level = "${level}"`);
@@ -112,7 +114,7 @@ export function generateCodex(
         const args = server.args.map((a) => `"${translateEnvVar(a, "codex")}"`).join(", ");
         lines.push(`args = [${args}]`);
       }
-      lines.push(`startup_timeout_sec = ${cfg.mcpStartupTimeoutSec}`);
+      lines.push(`startup_timeout_sec = ${CODEX_DEFAULT_MCP_STARTUP_TIMEOUT_SEC}`);
       if (server.env) {
         lines.push("");
         lines.push(`[mcp_servers.${name}.env]`);
@@ -129,7 +131,7 @@ export function generateCodex(
       for (const headerLine of codexHttpHeaderLines(name, server.headers)) {
         lines.push(headerLine);
       }
-      lines.push(`startup_timeout_sec = ${cfg.mcpStartupTimeoutSec}`);
+      lines.push(`startup_timeout_sec = ${CODEX_DEFAULT_MCP_STARTUP_TIMEOUT_SEC}`);
       lines.push("");
       log.dim(`  mcp: ${name} (remote/http)`);
     } else if (server.localFallback) {
@@ -138,7 +140,7 @@ export function generateCodex(
       lines.push(`command = "${server.localFallback.command}"`);
       const args = server.localFallback.args.map((a) => `"${translateEnvVar(a, "codex")}"`).join(", ");
       lines.push(`args = [${args}]`);
-      lines.push(`startup_timeout_sec = ${cfg.mcpStartupTimeoutSec}`);
+      lines.push(`startup_timeout_sec = ${CODEX_DEFAULT_MCP_STARTUP_TIMEOUT_SEC}`);
       lines.push("");
       log.dim(`  mcp: ${name} (remote->localFallback)`);
     } else {

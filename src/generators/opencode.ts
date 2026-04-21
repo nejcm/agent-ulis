@@ -1,6 +1,5 @@
 import { join } from "node:path";
 
-import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { parseCommands } from "../parsers/command.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
@@ -10,26 +9,27 @@ import { log } from "../utils/logger.js";
 import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
 
+const OPENCODE_DEFAULT_MODEL = "anthropic/sonnet";
+const OPENCODE_SMALL_MODEL = "opencode/kimi-k2.5-free";
+
 export function generateOpencode(
   agents: readonly ParsedAgent[],
   skills: readonly ParsedSkill[],
   mcp: McpConfig,
   aiDir: string,
   outDir: string,
-  buildConfig: BuildConfig,
   permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
   log.header("OpenCode");
 
-  const config = buildConfig.platforms.opencode;
   const enabledAgents = enabledAgentsFor(agents, "opencode");
   const enabledSkills = enabledSkillsFor(skills, "opencode");
 
   // Build agent block
   const agentBlock: Record<string, unknown> = {};
   for (const agent of enabledAgents) {
-    const ocName = config.agentNameMap[agent.name] ?? agent.name;
+    const ocName = agent.name;
     const ocPlatform = agent.frontmatter.platforms?.opencode;
     const ocModel = ocPlatform?.model ?? agent.frontmatter.model;
 
@@ -119,9 +119,9 @@ export function generateOpencode(
 
   // Assemble opencode.json
   const opencodeJson = {
-    $schema: config.schema,
-    model: config.defaultModel,
-    small_model: config.smallModel,
+    $schema: "https://opencode.ai/config.json",
+    model: OPENCODE_DEFAULT_MODEL,
+    small_model: OPENCODE_SMALL_MODEL,
     agent: agentBlock,
     permission: permissionBlock,
     mcp: mcpBlock,
@@ -134,7 +134,7 @@ export function generateOpencode(
   const agentsCoreDir = join(outDir, "agents", "core");
   const agentsSpecDir = join(outDir, "agents", "specialized");
   for (const agent of enabledAgents) {
-    const ocName = config.agentNameMap[agent.name] ?? agent.name;
+    const ocName = agent.name;
     const isCore = agent.frontmatter.tags.includes("core");
     const destDir = isCore ? agentsCoreDir : agentsSpecDir;
     // contextHints and restrictedPaths have no native OpenCode equivalent → comments in body
@@ -200,13 +200,6 @@ export function generateOpencode(
       copyDir(src, join(outDir, dir));
       log.success(`${dir}/`);
     }
-  }
-
-  // Copy guardrails
-  const guardrailsSrc = join(aiDir, "guardrails.md");
-  if (fileExists(guardrailsSrc)) {
-    writeFile(join(outDir, "config", "guardrails.md"), readFile(guardrailsSrc));
-    log.success("config/guardrails.md");
   }
 
   // Empty settings.json

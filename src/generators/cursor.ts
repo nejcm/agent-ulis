@@ -1,6 +1,5 @@
 import { join } from "node:path";
 
-import type { BuildConfig } from "../config.js";
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig, PermissionsConfig } from "../schema.js";
@@ -16,7 +15,6 @@ export function generateCursor(
   mcp: McpConfig,
   aiDir: string,
   outDir: string,
-  cfg: BuildConfig,
   permissions: PermissionsConfig = {},
 ): void {
   cleanDir(outDir);
@@ -29,7 +27,7 @@ export function generateCursor(
     const { frontmatter: fm } = agent;
     const cursorPlatform = fm.platforms?.cursor;
     const model = cursorPlatform?.model ?? fm.model;
-    const tools = mapTools(fm.tools, "cursor", cfg);
+    const tools = mapTools(fm.tools, "cursor");
 
     // Resolve readonly: explicit cursor override > security.permissionLevel === "readonly"
     const isReadonly = cursorPlatform?.readonly ?? fm.security?.permissionLevel === "readonly";
