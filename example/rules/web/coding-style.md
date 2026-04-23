@@ -57,12 +57,14 @@ Define design tokens as variables. Do not hardcode palette, typography, or spaci
 ## Animation-Only Properties
 
 Prefer compositor-friendly motion:
+
 - `transform`
 - `opacity`
 - `clip-path`
 - `filter` (sparingly)
 
 Avoid animating layout-bound properties:
+
 - `width`
 - `height`
 - `top`

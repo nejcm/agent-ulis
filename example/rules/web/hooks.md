@@ -114,6 +114,7 @@ Block oversized writes from tool input content, not from a file that may not exi
 ## Ordering
 
 Recommended order:
+
 1. format
 2. lint
 3. type check
