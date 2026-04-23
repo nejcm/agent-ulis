@@ -88,7 +88,7 @@ ulis install --global   # deploys to ~/.claude/, ~/.codex/, ~/.cursor/, ~/.openc
 | Flag                  | Applies to         | Description                                                                |
 | --------------------- | ------------------ | -------------------------------------------------------------------------- |
 | `-g`, `--global`      | all                | Operate on `~/.ulis/` and home-level install targets (`~/.claude/`…)       |
-| `--source <path>`     | `build`, `install` | Override the source directory (takes precedence over `--global`)           |
+| `--source <path>`     | `build`, `install` | Override the source directory; with `--global`, installs still target home |
 | `--target <platform>` | `build`, `install` | Comma-separated list: `claude`, `codex`, `cursor`, `opencode`, `forgecode` |
 | `-y`, `--yes`         | `install`          | Skip confirmation prompts                                                  |
 | `--no-rebuild`        | `install`          | Skip the build step and deploy existing `generated/`                       |
@@ -101,6 +101,8 @@ ulis install --global   # deploys to ~/.claude/, ~/.codex/, ~/.cursor/, ~/.openc
 1. `--source <path>` if provided — fails if missing.
 2. `--global` → `~/.ulis/` — fails with an `ulis init --global` hint if missing.
 3. Otherwise → `./.ulis/` in the current directory (**no walk-up**) — fails with an `ulis init` hint if missing.
+
+For `ulis install --source <path> --global`, the explicit source is built, then files are installed to home-level targets.
 
 ---
 
@@ -285,6 +287,7 @@ docs/
 ### Testing
 
 The `bun run dev` command builds against `example/` so the CLI works without any `.ulis/` in the current directory.
+The `bun run dev:install --source example` commands installs the example into global configs.
 
 ---
 

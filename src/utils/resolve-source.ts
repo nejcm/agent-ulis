@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { ULIS_SOURCE_DIRNAME } from "../config.js";
 
 export interface ResolveSourceOptions {
-  /** Explicit path override. Wins over all other resolution. */
+  /** Explicit path override for the ulis source tree. */
   readonly source?: string;
   /** Use the global `~/.ulis/` instead of the project-local `.ulis/`. */
   readonly global?: boolean;
@@ -22,8 +22,9 @@ export interface ResolvedSource {
 /**
  * Resolve the ulis source directory + install destination base.
  *
- * - `--source <path>` wins; destBase is the path's parent (so install still
- *   writes to `./.claude/` etc. alongside the explicit source).
+ * - `--source <path>` overrides the source tree.
+ * - `--source <path> --global` reads the explicit source but installs to `~`.
+ * - `--source <path>` without `--global` installs alongside the explicit source.
  * - `--global` → `~/.ulis/` as source, `~` as destBase.
  * - Default → `<cwd>/.ulis/` as source, cwd as destBase. Errors if missing
  *   (no walk-up — the user must run from the project root).
@@ -32,13 +33,12 @@ export function resolveSource(options: ResolveSourceOptions = {}): ResolvedSourc
   const cwd = options.cwd ?? process.cwd();
 
   if (options.source) {
-    const sourceDir = resolve(options.source);
+    const sourceDir = resolve(cwd, options.source);
     if (!existsSync(sourceDir)) {
       throw new Error(`--source path does not exist: ${sourceDir}`);
     }
-    // For explicit source overrides, install alongside (parent dir).
-    const destBase = resolve(join(sourceDir, ".."));
-    return { sourceDir, destBase, mode: "source" };
+    const destBase = options.global ? homedir() : resolve(join(sourceDir, ".."));
+    return { sourceDir, destBase, mode: options.global ? "global" : "source" };
   }
 
   if (options.global) {
