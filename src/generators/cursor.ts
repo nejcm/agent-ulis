@@ -1,6 +1,7 @@
 import { join } from "node:path";
 
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { type ParsedRule, enabledRulesFor } from "../parsers/rule.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig, PermissionsConfig } from "../schema.js";
 import { mergeOrCopyDir } from "../utils/config-merger.js";
@@ -17,6 +18,7 @@ export function generateCursor(
   aiDir: string,
   outDir: string,
   permissions: PermissionsConfig = {},
+  rules: readonly ParsedRule[] = [],
 ): void {
   cleanDir(outDir);
   log.header("Cursor");
@@ -70,6 +72,30 @@ export function generateCursor(
   copySkillDirs(enabledSkills, join(outDir, "skills"));
   if (enabledSkills.length > 0) {
     log.success(`skills/ (${enabledSkills.length} skills)`);
+  }
+
+  // Generate native Cursor rule files (.cursor/rules/<name>.mdc)
+  // paths: → globs: translation per Cursor's MDC frontmatter spec
+  const enabledRules = enabledRulesFor(rules, "cursor");
+  for (const rule of enabledRules) {
+    const fm = rule.frontmatter;
+    const fmLines: string[] = ["---"];
+    if (fm.description) fmLines.push(`description: ${fm.description}`);
+    if (fm.paths?.length) {
+      // Cursor uses `globs` instead of `paths`
+      fmLines.push("globs:");
+      for (const p of fm.paths) fmLines.push(`  - "${p}"`);
+    }
+    if (fm.alwaysApply) fmLines.push("alwaysApply: true");
+    fmLines.push("---");
+    const hasFrontmatter = fm.description || fm.paths?.length || fm.alwaysApply;
+    const mdcFilename = rule.filename.replace(/\.md$/, ".mdc");
+    const content = hasFrontmatter ? `${fmLines.join("\n")}\n\n${rule.body}\n` : `${rule.body}\n`;
+    writeFile(join(outDir, "rules", mdcFilename), content);
+    log.dim(`  rule: ${rule.name}`);
+  }
+  if (enabledRules.length > 0) {
+    log.success(`rules/ (${enabledRules.length} rules generated)`);
   }
 
   // Generate mcp.json

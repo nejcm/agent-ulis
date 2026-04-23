@@ -1,11 +1,12 @@
 import { join } from "node:path";
 
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { type ParsedRule, enabledRulesFor } from "../parsers/rule.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig, PermissionsConfig } from "../schema.js";
 import { mergeOrCopyDir } from "../utils/config-merger.js";
 import { translateEnvVar } from "../utils/env-var.js";
-import { cleanDir, copyDir, fileExists, writeFile } from "../utils/fs.js";
+import { cleanDir, copyDir, fileExists, readFile, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
@@ -72,6 +73,8 @@ export function generateCodex(
   aiDir: string,
   outDir: string,
   permissions: PermissionsConfig = {},
+  rules: readonly ParsedRule[] = [],
+  unsupportedPlatformRules: "inject" | "exclude" = "inject",
 ): void {
   cleanDir(outDir);
   log.header("Codex");
@@ -289,5 +292,38 @@ export function generateCodex(
   if (fileExists(rawPlatform)) {
     mergeOrCopyDir(rawPlatform, outDir);
     log.success("raw/codex/");
+  }
+
+  // Append Rules Index to AGENTS.md after all raw merges (Codex supports AGENTS.md natively)
+  if (unsupportedPlatformRules === "inject") {
+    const enabledRules = enabledRulesFor(rules, "codex");
+    if (enabledRules.length > 0) {
+      for (const rule of enabledRules) {
+        const src = join(aiDir, "rules", rule.filename);
+        if (fileExists(src)) {
+          writeFile(join(outDir, "rules", rule.filename), readFile(src));
+        }
+      }
+      const indexLines = [
+        "## Rules",
+        "",
+        "The following rules contain guidelines you should apply when relevant.",
+        "Read the referenced file when working in the indicated context.",
+        "",
+      ];
+      for (const rule of enabledRules) {
+        let line = `- **${rule.name}** (\`rules/${rule.filename}\`)`;
+        if (rule.frontmatter.description) line += `: ${rule.frontmatter.description}`;
+        if (rule.frontmatter.paths?.length) {
+          line += ` — apply when working in ${rule.frontmatter.paths.join(", ")}`;
+        }
+        indexLines.push(line);
+      }
+      const rulesSection = indexLines.join("\n") + "\n";
+      const agentsPath = join(outDir, "AGENTS.md");
+      const existing = fileExists(agentsPath) ? readFile(agentsPath).trimEnd() + "\n\n" : "";
+      writeFile(agentsPath, existing + rulesSection);
+      log.success("AGENTS.md (rules index injected)");
+    }
   }
 }

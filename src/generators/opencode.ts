@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
 import { parseCommands } from "../parsers/command.js";
+import { type ParsedRule, enabledRulesFor } from "../parsers/rule.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig, PermissionsConfig } from "../schema.js";
 import { mergeOrCopyDir } from "../utils/config-merger.js";
@@ -20,6 +21,8 @@ export function generateOpencode(
   aiDir: string,
   outDir: string,
   permissions: PermissionsConfig = {},
+  rules: readonly ParsedRule[] = [],
+  unsupportedPlatformRules: "inject" | "exclude" = "inject",
 ): void {
   cleanDir(outDir);
   log.header("OpenCode");
@@ -216,5 +219,38 @@ export function generateOpencode(
   if (fileExists(rawPlatform)) {
     mergeOrCopyDir(rawPlatform, outDir);
     log.success("raw/opencode/");
+  }
+
+  // Append Rules Index to AGENTS.md after all raw merges (OpenCode supports AGENTS.md natively)
+  if (unsupportedPlatformRules === "inject") {
+    const enabledRules = enabledRulesFor(rules, "opencode");
+    if (enabledRules.length > 0) {
+      for (const rule of enabledRules) {
+        const src = join(aiDir, "rules", rule.filename);
+        if (fileExists(src)) {
+          writeFile(join(outDir, "rules", rule.filename), readFile(src));
+        }
+      }
+      const indexLines = [
+        "## Rules",
+        "",
+        "The following rules contain guidelines you should apply when relevant.",
+        "Read the referenced file when working in the indicated context.",
+        "",
+      ];
+      for (const rule of enabledRules) {
+        let line = `- **${rule.name}** (\`rules/${rule.filename}\`)`;
+        if (rule.frontmatter.description) line += `: ${rule.frontmatter.description}`;
+        if (rule.frontmatter.paths?.length) {
+          line += ` — apply when working in ${rule.frontmatter.paths.join(", ")}`;
+        }
+        indexLines.push(line);
+      }
+      const rulesSection = indexLines.join("\n") + "\n";
+      const agentsPath = join(outDir, "AGENTS.md");
+      const existing = fileExists(agentsPath) ? readFile(agentsPath).trimEnd() + "\n\n" : "";
+      writeFile(agentsPath, existing + rulesSection);
+      log.success("AGENTS.md (rules index injected)");
+    }
   }
 }

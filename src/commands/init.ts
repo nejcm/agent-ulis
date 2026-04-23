@@ -9,6 +9,7 @@ import {
   renderMcp,
   renderPermissions,
   renderPlugins,
+  renderRuleCodeStyle,
   renderSkills,
   type ScaffoldContext,
 } from "../scaffold/index.js";
@@ -18,7 +19,7 @@ export interface InitOptions {
   readonly global?: boolean;
 }
 
-const SUBDIRS = ["agents", "skills", "commands", "raw"] as const;
+const SUBDIRS = ["agents", "skills", "commands", "raw", "rules"] as const;
 
 export async function initCmd(options: InitOptions = {}): Promise<void> {
   const cwd = process.cwd();
@@ -52,6 +53,7 @@ export async function initCmd(options: InitOptions = {}): Promise<void> {
   writeFileSync(join(targetDir, "permissions.yaml"), renderPermissions(context));
   writeFileSync(join(targetDir, "plugins.yaml"), renderPlugins(context));
   writeFileSync(join(targetDir, "skills.yaml"), renderSkills(context));
+  writeFileSync(join(targetDir, "rules", "code-style.md"), renderRuleCodeStyle(context));
 
   log.success(`Scaffolded ${targetDir}`);
 

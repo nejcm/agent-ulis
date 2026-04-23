@@ -10,9 +10,12 @@ import { parseAgents } from "./parsers/agent.js";
 import { loadMcp } from "./parsers/mcp.js";
 import { loadPermissions } from "./parsers/permissions.js";
 import { loadPlugins } from "./parsers/plugins.js";
+import { parseRules } from "./parsers/rule.js";
 import { parseSkills } from "./parsers/skill.js";
 import type { Platform } from "./platforms.js";
 import { PLATFORMS, uniquePlatforms } from "./platforms.js";
+import { UlisConfigSchema } from "./schema.js";
+import { loadConfigFile } from "./utils/config-loader.js";
 import { log } from "./utils/logger.js";
 import { validateCollisions } from "./validators/collisions.js";
 import { validateCrossRefs, type Diagnostic } from "./validators/cross-refs.js";
@@ -58,12 +61,19 @@ export function runBuild(options: BuildOptions): BuildResult {
   logger.info(`Output: ${outputDir}`);
   logger.info(`Targets: ${activeTargets.join(", ")}`);
 
+  // Load top-level config.yaml (optional; provides defaults when missing)
+  const rawConfig = loadConfigFile(sourceDir, "config");
+  const ulisConfig = UlisConfigSchema.parse(rawConfig ?? UlisConfigSchema.default);
+
   logger.header("Parsing");
   const agents = parseAgents(join(sourceDir, "agents"));
   logger.success(`Parsed ${agents.length} agents`);
 
   const skills = parseSkills(join(sourceDir, "skills"));
   logger.success(`Parsed ${skills.length} skills`);
+
+  const rules = parseRules(join(sourceDir, "rules"));
+  if (rules.length > 0) logger.success(`Parsed ${rules.length} rules`);
 
   const mcp = loadMcp(sourceDir);
   logger.success(`Parsed ${Object.keys(mcp.servers).length} MCP servers`);
@@ -98,23 +108,25 @@ export function runBuild(options: BuildOptions): BuildResult {
   }
   logger.success(`Validation passed (${warningCount} warning(s))`);
 
+  const unsupportedPlatformRules = ulisConfig.unsupportedPlatformRules;
+
   for (const target of activeTargets) {
     const outDir = join(outputDir, target);
     switch (target) {
       case "opencode":
-        generateOpencode(agents, skills, mcp, sourceDir, outDir, permissions);
+        generateOpencode(agents, skills, mcp, sourceDir, outDir, permissions, rules, unsupportedPlatformRules);
         break;
       case "claude":
-        generateClaude(agents, skills, mcp, plugins, sourceDir, outDir, permissions);
+        generateClaude(agents, skills, mcp, plugins, sourceDir, outDir, permissions, rules);
         break;
       case "codex":
-        generateCodex(agents, skills, mcp, sourceDir, outDir, permissions);
+        generateCodex(agents, skills, mcp, sourceDir, outDir, permissions, rules, unsupportedPlatformRules);
         break;
       case "cursor":
-        generateCursor(agents, skills, mcp, sourceDir, outDir, permissions);
+        generateCursor(agents, skills, mcp, sourceDir, outDir, permissions, rules);
         break;
       case "forgecode":
-        generateForgecode(agents, skills, mcp, sourceDir, outDir);
+        generateForgecode(agents, skills, mcp, sourceDir, outDir, rules, unsupportedPlatformRules);
         break;
     }
   }

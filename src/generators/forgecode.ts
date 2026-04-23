@@ -1,10 +1,11 @@
 import { join } from "node:path";
 
 import { type ParsedAgent, enabledAgentsFor } from "../parsers/agent.js";
+import { type ParsedRule, enabledRulesFor } from "../parsers/rule.js";
 import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig } from "../schema.js";
 import { mergeOrCopyDir } from "../utils/config-merger.js";
-import { cleanDir, copyDir, copySkillDirs, fileExists, writeFile } from "../utils/fs.js";
+import { cleanDir, copyDir, copySkillDirs, fileExists, readFile, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor, translateEnvMap } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
@@ -23,6 +24,8 @@ export function generateForgecode(
   mcp: McpConfig,
   aiDir: string,
   outDir: string,
+  rules: readonly ParsedRule[] = [],
+  unsupportedPlatformRules: "inject" | "exclude" = "inject",
 ): void {
   cleanDir(outDir);
   log.header("ForgeCode");
@@ -119,5 +122,35 @@ export function generateForgecode(
   if (fileExists(rawPlatform)) {
     mergeOrCopyDir(rawPlatform, outDir);
     log.success("raw/forgecode/");
+  }
+
+  // Generate .forge/RULES.md after all raw merges (ForgeCode has no AGENTS.md equivalent)
+  if (unsupportedPlatformRules === "inject") {
+    const enabledRules = enabledRulesFor(rules, "forgecode");
+    if (enabledRules.length > 0) {
+      for (const rule of enabledRules) {
+        const src = join(aiDir, "rules", rule.filename);
+        if (fileExists(src)) {
+          writeFile(join(outDir, ".forge", "rules", rule.filename), readFile(src));
+        }
+      }
+      const indexLines = [
+        "## Rules",
+        "",
+        "The following rules contain guidelines you should apply when relevant.",
+        "Read the referenced file when working in the indicated context.",
+        "",
+      ];
+      for (const rule of enabledRules) {
+        let line = `- **${rule.name}** (\`rules/${rule.filename}\`)`;
+        if (rule.frontmatter.description) line += `: ${rule.frontmatter.description}`;
+        if (rule.frontmatter.paths?.length) {
+          line += ` — apply when working in ${rule.frontmatter.paths.join(", ")}`;
+        }
+        indexLines.push(line);
+      }
+      writeFile(join(outDir, ".forge", "RULES.md"), indexLines.join("\n") + "\n");
+      log.success(".forge/RULES.md (rules index)");
+    }
   }
 }

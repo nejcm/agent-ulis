@@ -99,6 +99,14 @@ const SKILLS_TEMPLATE = `# yaml-language-server: $schema={{schemaBase}}/skills.s
 #       args: ["--skill", "mcp-builder"]
 `;
 
+const RULE_CODE_STYLE_TEMPLATE = `# Code Style
+
+- Use 2-space indentation
+- Prefer \`const\` over \`let\` where values are not reassigned
+- Functions should be small and single-purpose
+- Avoid deeply nested conditionals — prefer early returns
+`;
+
 export interface ScaffoldContext {
   readonly name: string;
   readonly schemaBase: string;
@@ -126,6 +134,10 @@ export function renderPlugins(context: ScaffoldContext): string {
 
 export function renderSkills(context: ScaffoldContext): string {
   return substitute(SKILLS_TEMPLATE, context);
+}
+
+export function renderRuleCodeStyle(_context: ScaffoldContext): string {
+  return RULE_CODE_STYLE_TEMPLATE;
 }
 
 /** Default schema base URL when project-level templates reference local schemas. */
