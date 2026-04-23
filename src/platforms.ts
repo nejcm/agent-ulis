@@ -26,7 +26,7 @@ export const PLATFORM_DIRS: Record<Platform, { home: string; project: string }> 
   opencode: { home: ".opencode", project: ".opencode" },
   codex: { home: ".codex", project: ".codex" },
   cursor: { home: ".cursor", project: ".cursor" },
-  forgecode: { home: "forge", project: ".forge" },
+  forgecode: { home: ".forge", project: ".forge" },
 };
 
 export function isPlatform(value: string): value is Platform {
