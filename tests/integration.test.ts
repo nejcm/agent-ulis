@@ -123,6 +123,14 @@ describe("OpenCode generator", () => {
     expect(oc.mcp).toHaveProperty("test-local");
     expect(oc.mcp).toHaveProperty("test-remote");
   });
+
+  it("preserves non-ULIS SKILL.md frontmatter for copied skills", () => {
+    const skill = readOut("opencode", "skills", "my-skill", "SKILL.md");
+    expect(skill).toContain("---");
+    expect(skill).toContain("custom_agent_hint: keep-me");
+    expect(skill).not.toContain("allowImplicitInvocation:");
+    expect(skill).not.toContain("platforms:");
+  });
 });
 
 // ─── Codex ───────────────────────────────────────────────────────────────────
@@ -148,6 +156,16 @@ describe("Codex generator", () => {
     // test-remote has a localFallback — should appear in config
     expect(toml).toContain("test-remote");
   });
+
+  it("preserves non-ULIS SKILL.md frontmatter for codex skills", () => {
+    const skill = readOut("codex", "skills", "my-skill", "SKILL.md");
+    expect(skill).toContain("---");
+    expect(skill).toContain("name: my-skill");
+    expect(skill).toContain("description: A minimal test skill");
+    expect(skill).toContain("custom_agent_hint: keep-me");
+    expect(skill).not.toContain("allowImplicitInvocation:");
+    expect(skill).not.toContain("platforms:");
+  });
 });
 
 // ─── Cursor ──────────────────────────────────────────────────────────────────
@@ -169,6 +187,14 @@ describe("Cursor generator", () => {
     const mcp = JSON.parse(readOut("cursor", "mcp.json"));
     expect(mcp.mcpServers).toHaveProperty("test-local");
     expect(mcp.mcpServers).toHaveProperty("test-remote");
+  });
+
+  it("preserves non-ULIS SKILL.md frontmatter for copied skills", () => {
+    const skill = readOut("cursor", "skills", "my-skill", "SKILL.md");
+    expect(skill).toContain("---");
+    expect(skill).toContain("custom_agent_hint: keep-me");
+    expect(skill).not.toContain("allowImplicitInvocation:");
+    expect(skill).not.toContain("platforms:");
   });
 });
 
@@ -192,6 +218,14 @@ describe("ForgeCode generator", () => {
   it("copies skill directories under .forge/skills", () => {
     const content = readOut("forgecode", ".forge", "skills", "my-skill", "SKILL.md");
     expect(content).toContain("A minimal test skill");
+  });
+
+  it("preserves non-ULIS SKILL.md frontmatter for copied skills", () => {
+    const skill = readOut("forgecode", ".forge", "skills", "my-skill", "SKILL.md");
+    expect(skill).toContain("---");
+    expect(skill).toContain("custom_agent_hint: keep-me");
+    expect(skill).not.toContain("allowImplicitInvocation:");
+    expect(skill).not.toContain("platforms:");
   });
 
   it("copies raw/common and raw/forgecode payloads", () => {

@@ -6,10 +6,11 @@ import { type ParsedSkill, enabledSkillsFor } from "../parsers/skill.js";
 import type { McpConfig, PermissionsConfig } from "../schema.js";
 import { mergeOrCopyDir } from "../utils/config-merger.js";
 import { translateEnvVar } from "../utils/env-var.js";
-import { cleanDir, copyDir, fileExists, readFile, writeFile } from "../utils/fs.js";
+import { cleanDir, fileExists, readFile, writeFile } from "../utils/fs.js";
 import { log } from "../utils/logger.js";
 import { mcpServersFor } from "../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../utils/policy-comments.js";
+import { toPlatformSkillMarkdown } from "../utils/skill-frontmatter.js";
 
 const CODEX_DEFAULT_MODEL = "gpt-5.4";
 const CODEX_DEFAULT_MODEL_REASONING_EFFORT = "high";
@@ -213,8 +214,9 @@ export function generateCodex(
     const fm = skill.frontmatter;
     const codexPlatform = fm.platforms?.codex;
 
-    // Write SKILL.md (body only, no frontmatter — Codex reads name/description from agents/openai.yaml)
-    writeFile(join(outDir, "skills", skill.name, "SKILL.md"), skill.body + "\n");
+    // Preserve skill frontmatter for native agents, but drop ULIS-only control keys.
+    const rawSkillMd = readFile(join(skill.dir, "SKILL.md"));
+    writeFile(join(outDir, "skills", skill.name, "SKILL.md"), toPlatformSkillMarkdown(rawSkillMd) + "\n");
 
     // Generate agents/openai.yaml if there's codex-specific config
     const hasUiConfig =

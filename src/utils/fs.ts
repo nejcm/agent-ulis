@@ -1,6 +1,8 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { toPlatformSkillMarkdown } from "./skill-frontmatter.js";
+
 export function ensureDir(dirPath: string): void {
   mkdirSync(dirPath, { recursive: true });
 }
@@ -58,6 +60,12 @@ export function copySkillDirs(
   outSkillsDir: string,
 ): void {
   for (const skill of skills) {
-    copyDir(skill.dir, join(outSkillsDir, skill.name));
+    const destDir = join(outSkillsDir, skill.name);
+    copyDir(skill.dir, destDir);
+    const skillMdPath = join(destDir, "SKILL.md");
+    if (existsSync(skillMdPath)) {
+      const transformed = toPlatformSkillMarkdown(readFile(skillMdPath));
+      writeFile(skillMdPath, transformed + "\n");
+    }
   }
 }
