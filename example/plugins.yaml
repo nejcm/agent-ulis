@@ -1,8 +1,4 @@
-# yaml-language-server: $schema=./node_modules/@nejcm/ulis/dist/schemas/plugins.schema.json
+# yaml-language-server: $schema=../dist/schemas/plugins.schema.json
 
 claude:
   plugins:
-    - name: frontend-design
-      source: official
-    - name: ralph-loop
-      source: official

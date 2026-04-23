@@ -60,7 +60,7 @@ export const SHELL_TYPES = ["bash", "powershell"] as const;
 export type ShellType = (typeof SHELL_TYPES)[number];
 
 // Codex approval modes
-export const CODEX_APPROVAL_MODES = ["suggest", "auto-edit", "full-auto"] as const;
+export const CODEX_APPROVAL_MODES = ["untrusted", "on-failure", "on-request", "granular", "never"] as const;
 export type CodexApprovalMode = (typeof CODEX_APPROVAL_MODES)[number];
 
 // OpenCode permission tool keys

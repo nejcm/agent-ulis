@@ -75,7 +75,7 @@ opencode:
     external_directory: ask
     doom_loop: ask
 codex:
-  approvalMode: suggest
+  approvalMode: on-request
   sandbox: elevated
 cursor:
   mcpAllowlist:
