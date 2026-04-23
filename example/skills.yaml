@@ -10,6 +10,10 @@
       args:
         - --skill
         - mcp-builder
+    - name: https://github.com/anthropics/skills
+      args:
+        - --skill
+        - skill-creator
     - name: microsoft/playwright-cli
       args:
         - --skill

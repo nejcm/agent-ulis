@@ -379,12 +379,12 @@ function installClaudePlugins(plugins: PluginsConfig, logger?: Logger): void {
 }
 
 // map platform key to skills argument agent name
-const PLATFORM_AGENT_NAMES: Partial<Record<Platform, string>> = {
+// only platforms supported by the `skills` CLI are listed here
+const SKILL_PLATFORM_AGENT_NAMES: Partial<Record<Platform, string>> = {
   claude: "claude-code",
   opencode: "opencode",
   codex: "codex",
   cursor: "cursor",
-  forgecode: "forgecode",
 };
 
 function installSkills(
@@ -395,10 +395,10 @@ function installSkills(
   if (skills.length === 0) return;
   const agentFlags =
     platform === "*"
-      ? Object.values(PLATFORM_AGENT_NAMES)
+      ? Object.values(SKILL_PLATFORM_AGENT_NAMES)
           .map((name) => ["-a", name])
           .flat()
-      : ["-a", PLATFORM_AGENT_NAMES[platform] ?? platform];
+      : ["-a", SKILL_PLATFORM_AGENT_NAMES[platform] ?? platform];
 
   for (const skill of skills) {
     const npxArgs = ["skills@latest", "add", skill.name, ...agentFlags, "--yes", ...(skill.args ?? [])];
