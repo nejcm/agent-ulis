@@ -3,9 +3,6 @@
 **/dist/
 generated/
 
-# Personal Claude Code project data (machine-specific)
-.claude/
-
 # Backup files created by install scripts
 *.backup.*
 
