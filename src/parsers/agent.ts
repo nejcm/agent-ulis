@@ -1,10 +1,5 @@
-import { readdirSync } from "node:fs";
-import { join, basename } from "node:path";
-
-import matter from "gray-matter";
-
 import { AgentFrontmatterSchema, type AgentFrontmatter } from "../schema.js";
-import { readFile } from "../utils/fs.js";
+import { readMarkdownDir, ParseError } from "./_shared.js";
 
 export interface ParsedAgent {
   name: string;
@@ -20,15 +15,12 @@ export function enabledAgentsFor(agents: readonly ParsedAgent[], platform: Agent
 }
 
 export function parseAgents(agentsDir: string): readonly ParsedAgent[] {
-  const files = readdirSync(agentsDir).filter((f) => f.endsWith(".md") && f.toLowerCase() !== "readme.md");
-  return files.map((file) => {
-    const raw = readFile(join(agentsDir, file));
-    const { data, content } = matter(raw);
-    const frontmatter = AgentFrontmatterSchema.parse(data);
-    return {
-      name: basename(file, ".md"),
-      frontmatter,
-      body: content.trim(),
-    };
-  });
+  const { items, errors } = readMarkdownDir(
+    agentsDir,
+    AgentFrontmatterSchema,
+    "agent",
+    (name, frontmatter, body) => ({ name, frontmatter, body }),
+  );
+  if (errors.length > 0) throw errors[0] as ParseError;
+  return items;
 }

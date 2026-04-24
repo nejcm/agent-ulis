@@ -2,19 +2,13 @@ import { join, resolve } from "node:path";
 
 import { ULIS_GENERATED_DIRNAME } from "./config.js";
 import { generate, writeResult } from "./generators/index.js";
-import { parseAgents } from "./parsers/agent.js";
-import { loadMcp } from "./parsers/mcp.js";
-import { loadPermissions } from "./parsers/permissions.js";
-import { loadPlugins } from "./parsers/plugins.js";
-import { parseRules } from "./parsers/rule.js";
-import { parseSkills } from "./parsers/skill.js";
+import { parseProject, ParseAggregateError } from "./parsers/index.js";
 import type { Platform } from "./platforms.js";
 import { PLATFORMS, uniquePlatforms } from "./platforms.js";
-import { UlisConfigSchema } from "./schema.js";
-import { loadConfigFile } from "./utils/config-loader.js";
 import { log } from "./utils/logger.js";
+import type { Diagnostic } from "./types.js";
 import { validateCollisions } from "./validators/collisions.js";
-import { validateCrossRefs, type Diagnostic } from "./validators/cross-refs.js";
+import { validateCrossRefs } from "./validators/cross-refs.js";
 
 export interface Logger {
   info(message: string): void;
@@ -57,33 +51,26 @@ export function runBuild(options: BuildOptions): BuildResult {
   logger.info(`Output: ${outputDir}`);
   logger.info(`Targets: ${activeTargets.join(", ")}`);
 
-  // Load top-level config.yaml (optional; provides defaults when missing)
-  const rawConfig = loadConfigFile(sourceDir, "config");
-  const ulisConfig = UlisConfigSchema.parse(rawConfig ?? UlisConfigSchema.default);
-
   logger.header("Parsing");
-  const agents = parseAgents(join(sourceDir, "agents"));
-  logger.success(`Parsed ${agents.length} agents`);
-
-  const skills = parseSkills(join(sourceDir, "skills"));
-  logger.success(`Parsed ${skills.length} skills`);
-
-  const rules = parseRules(join(sourceDir, "rules"));
-  if (rules.length > 0) logger.success(`Parsed ${rules.length} rules`);
-
-  const mcp = loadMcp(sourceDir);
-  logger.success(`Parsed ${Object.keys(mcp.servers).length} MCP servers`);
-
-  const plugins = loadPlugins(sourceDir);
-  logger.success(`Parsed plugins config`);
-
-  const permissions = loadPermissions(sourceDir);
-  logger.success(`Loaded permissions config`);
+  let parsed: ReturnType<typeof parseProject>;
+  try {
+    parsed = parseProject(sourceDir);
+  } catch (err) {
+    if (err instanceof ParseAggregateError) {
+      for (const e of err.errors) logger.error(e.message);
+      throw new Error(`Parsing failed: ${err.errors.length} error(s). No files written.`);
+    }
+    throw err;
+  }
+  logger.success(`Parsed ${parsed.agents.length} agents`);
+  logger.success(`Parsed ${parsed.skills.length} skills`);
+  if (parsed.rules.length > 0) logger.success(`Parsed ${parsed.rules.length} rules`);
+  logger.success(`Parsed ${Object.keys(parsed.mcp.servers).length} MCP servers`);
 
   logger.header("Validation");
   const diagnostics: readonly Diagnostic[] = [
-    ...validateCrossRefs(agents, skills, mcp),
-    ...validateCollisions(agents, skills),
+    ...validateCrossRefs(parsed.agents, parsed.skills, parsed.mcp),
+    ...validateCollisions(parsed.agents, parsed.skills),
   ];
 
   for (const diagnostic of diagnostics) {
@@ -104,11 +91,9 @@ export function runBuild(options: BuildOptions): BuildResult {
   }
   logger.success(`Validation passed (${warningCount} warning(s))`);
 
-  const projectBundle = { agents, skills, rules, mcp, permissions, plugins, ulisConfig, sourceDir };
-
   for (const target of activeTargets) {
     const outDir = join(outputDir, target);
-    const result = generate(target, projectBundle);
+    const result = generate(target, parsed);
     if (!result) throw new Error(`No generator registered for platform: ${target}`);
     writeResult(result, outDir, target);
   }
