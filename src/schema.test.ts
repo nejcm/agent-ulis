@@ -223,6 +223,32 @@ describe("SkillFrontmatterSchema", () => {
     });
     expect(multi.paths).toEqual(["src/**", "tests/**"]);
   });
+
+  it("preserves unknown root fields", () => {
+    const result = SkillFrontmatterSchema.parse({
+      name: "x-skill",
+      description: "x",
+      author: "acme-org",
+      customField: 42,
+    });
+    expect((result as Record<string, unknown>).author).toBe("acme-org");
+    expect((result as Record<string, unknown>).customField).toBe(42);
+  });
+
+  it("preserves unknown fields inside platform overrides", () => {
+    const result = SkillFrontmatterSchema.parse({
+      name: "x-skill",
+      description: "x",
+      platforms: {
+        claude: { enabled: true, extra_claude_field: "hello" },
+        cursor: { enabled: true, cursor_custom: true },
+        unknown_platform: { enabled: true },
+      },
+    });
+    expect((result.platforms?.claude as Record<string, unknown>).extra_claude_field).toBe("hello");
+    expect((result.platforms?.cursor as Record<string, unknown>).cursor_custom).toBe(true);
+    expect((result.platforms as Record<string, unknown>).unknown_platform).toBeDefined();
+  });
 });
 
 describe("McpConfigSchema", () => {
