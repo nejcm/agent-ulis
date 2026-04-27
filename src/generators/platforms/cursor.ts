@@ -7,6 +7,7 @@ import { mcpServersFor, translateEnvMap } from "../../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../../utils/policy-comments.js";
 import { mapTools } from "../../utils/tool-mapper.js";
 import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
+import { extraToYamlLines } from "../shared/yaml.js";
 
 export function generateCursor(project: ProjectBundle): GenerationResult {
   const artifacts: FileArtifact[] = [];
@@ -15,6 +16,15 @@ export function generateCursor(project: ProjectBundle): GenerationResult {
   for (const agent of enabledAgentsFor(project.agents, "cursor")) {
     const { frontmatter: fm } = agent;
     const cursorPlatform = fm.platforms?.cursor;
+
+    const {
+      enabled: _enabled,
+      model: _model,
+      readonly: _readonly,
+      is_background: _is_background,
+      ...cursorExtra
+    } = (cursorPlatform ?? {}) as Record<string, unknown>;
+
     const model = cursorPlatform?.model ?? fm.model;
     const tools = mapTools(fm.tools, "cursor");
 
@@ -29,6 +39,7 @@ export function generateCursor(project: ProjectBundle): GenerationResult {
       lines.push(`tools:`);
       for (const tool of tools) lines.push(`  - ${tool}`);
     }
+    lines.push(...extraToYamlLines(cursorExtra));
     lines.push("---");
 
     const policyBlock = buildPolicyCommentBlock(fm, "mdc");

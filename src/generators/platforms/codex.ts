@@ -26,6 +26,20 @@ function toYamlString(value: string): string {
   return JSON.stringify(value);
 }
 
+function emitTomlExtra(lines: string[], extra: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(extra)) {
+    if (value === undefined || value === null) continue;
+    if (typeof value === "string") {
+      lines.push(`${key} = ${toTomlString(value)}`);
+    } else if (typeof value === "number" || typeof value === "boolean") {
+      lines.push(`${key} = ${value}`);
+    } else if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
+      const items = (value as string[]).map((v) => toTomlString(v)).join(", ");
+      lines.push(`${key} = [${items}]`);
+    }
+  }
+}
+
 /**
  * Codex distinguishes three HTTP header cases:
  * - `bearer_token_env_var`: header value is exactly `Bearer ${VAR}`
@@ -131,6 +145,18 @@ export function generateCodex(project: ProjectBundle): GenerationResult {
   // Per-agent TOML files
   for (const agent of enabledAgentsFor(project.agents, "codex")) {
     const codexPlatform = agent.frontmatter.platforms?.codex;
+
+    // Destructure fields with special merge/derive logic; everything else passes through.
+    const {
+      enabled: _enabled,
+      model: _model,
+      model_reasoning_effort: _mre,
+      sandbox_mode: _sandbox,
+      nickname_candidates: _nicks,
+      mcp_servers: _mcp,
+      ...codexExtra
+    } = (codexPlatform ?? {}) as Record<string, unknown>;
+
     const agentLines: string[] = [];
 
     agentLines.push(`name = ${toTomlString(agent.name)}`);
@@ -154,6 +180,8 @@ export function generateCodex(project: ProjectBundle): GenerationResult {
       const nicks = codexPlatform.nickname_candidates.map((n) => toTomlString(n)).join(", ");
       agentLines.push(`nickname_candidates = [${nicks}]`);
     }
+
+    emitTomlExtra(agentLines, codexExtra);
 
     const policyBlock = buildPolicyCommentBlock(agent.frontmatter, "toml");
     const contents = policyBlock ? `${policyBlock}\n${agentLines.join("\n")}` : agentLines.join("\n");

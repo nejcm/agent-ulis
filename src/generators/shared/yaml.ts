@@ -19,6 +19,28 @@ export function toYamlScalar(value: string): string {
 }
 
 /**
+ * Serialize extra (unknown) platform fields as YAML lines.
+ * Handles strings, numbers, booleans, and flat arrays. Skips null/undefined/objects.
+ */
+export function extraToYamlLines(extra: Record<string, unknown>): string[] {
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(extra)) {
+    if (value === undefined || value === null) continue;
+    if (typeof value === "string") {
+      lines.push(`${key}: ${toYamlScalar(value)}`);
+    } else if (typeof value === "number" || typeof value === "boolean") {
+      lines.push(`${key}: ${value}`);
+    } else if (Array.isArray(value)) {
+      lines.push(`${key}:`);
+      for (const item of value) {
+        lines.push(`  - ${typeof item === "string" ? toYamlScalar(item) : String(item)}`);
+      }
+    }
+  }
+  return lines;
+}
+
+/**
  * Serialize a flat key→value record as a YAML frontmatter block
  * (delimited by `---`). Supports string scalars, numbers, booleans, and
  * top-level string arrays. Skips `null`/`undefined` entries.

@@ -24,6 +24,20 @@ export function generateOpencode(project: ProjectBundle): GenerationResult {
   const agentBlock: Record<string, unknown> = {};
   for (const agent of enabledAgents) {
     const ocPlatform = agent.frontmatter.platforms?.opencode;
+
+    // Destructure fields with special merge/derive logic; everything else passes through.
+    const {
+      enabled: _enabled,
+      model: _model,
+      mode: _mode,
+      top_p: _top_p,
+      rate_limit_per_hour: _rate_limit,
+      permission: _permission,
+      hidden: _hidden,
+      disable: _disable,
+      ...ocExtra
+    } = (ocPlatform ?? {}) as Record<string, unknown>;
+
     const ocModel = ocPlatform?.model ?? agent.frontmatter.model;
 
     const entry: Record<string, unknown> = {
@@ -58,6 +72,8 @@ export function generateOpencode(project: ProjectBundle): GenerationResult {
 
     const rateLimit = ocPlatform?.rate_limit_per_hour ?? sec?.rateLimit?.perHour;
     if (rateLimit !== undefined) entry.rate_limit_per_hour = rateLimit;
+
+    Object.assign(entry, ocExtra);
 
     agentBlock[agent.name] = entry;
   }
@@ -125,8 +141,9 @@ export function generateOpencode(project: ProjectBundle): GenerationResult {
       const resolvedAgent = (ocPlatform?.agent ?? fm.agent) as string | undefined;
       const resolvedSubtask = (ocPlatform?.subtask ?? fm.subtask) as boolean | undefined;
 
+      const { enabled: _e, model: _ocm, agent: _oca, subtask: _ocs, ...ocExtra } = ocPlatform ?? {};
       const { platforms: _platforms, model: _model, agent: _agent, subtask: _subtask, ...rest } = fm;
-      const outData: Record<string, unknown> = { ...rest };
+      const outData: Record<string, unknown> = { ...rest, ...ocExtra };
       if (resolvedModel) outData.model = resolvedModel;
       if (resolvedAgent) outData.agent = resolvedAgent;
       if (resolvedSubtask !== undefined) outData.subtask = resolvedSubtask;

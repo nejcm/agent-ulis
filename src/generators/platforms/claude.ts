@@ -8,12 +8,23 @@ import { mcpServersFor, normalizeLocalMcpCommand, translateEnvMap } from "../../
 import { buildPolicyCommentBlock } from "../../utils/policy-comments.js";
 import { mapTools } from "../../utils/tool-mapper.js";
 import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
-import { toYamlScalar, serializeYamlFrontmatter } from "../shared/yaml.js";
+import { toYamlScalar, serializeYamlFrontmatter, extraToYamlLines } from "../shared/yaml.js";
 
 /** Serialize the YAML frontmatter block for a Claude subagent. */
 function subagentFrontmatter(agent: ParsedAgent): string {
   const { frontmatter: fm } = agent;
   const claudePlatform = fm.platforms?.claude;
+
+  // Destructure known/specially-handled fields; the rest pass through verbatim.
+  const {
+    enabled: _enabled,
+    model: _model,
+    permissionMode: _permissionMode,
+    disallowedTools: _disallowedTools,
+    initialPrompt: _initialPrompt,
+    ...claudeExtra
+  } = (claudePlatform ?? {}) as Record<string, unknown>;
+
   const lines: string[] = ["---"];
 
   lines.push(`name: ${toYamlScalar(agent.name)}`);
@@ -87,6 +98,8 @@ function subagentFrontmatter(agent: ParsedAgent): string {
 
   if (fm.color) lines.push(`color: ${toYamlScalar(fm.color)}`);
   if (claudePlatform?.initialPrompt) lines.push(`initialPrompt: ${toYamlScalar(claudePlatform.initialPrompt)}`);
+
+  lines.push(...extraToYamlLines(claudeExtra));
 
   lines.push("---");
   return lines.join("\n");
@@ -195,10 +208,11 @@ export function generateClaude(project: ProjectBundle): GenerationResult {
       const claudePlatform = (fm.platforms as Record<string, unknown> | undefined)?.claude as
         | Record<string, unknown>
         | undefined;
-      const resolvedModel = claudePlatform?.model ?? fm.model;
+      const { enabled: _e, model: _cm, ...claudeExtra } = claudePlatform ?? {};
+      const resolvedModel = (claudePlatform?.model ?? fm.model) as string | undefined;
 
       const { platforms: _platforms, model: _model, ...rest } = fm;
-      const outData: Record<string, unknown> = { ...rest };
+      const outData: Record<string, unknown> = { ...rest, ...claudeExtra };
       if (resolvedModel) outData.model = resolvedModel;
 
       artifacts.push({

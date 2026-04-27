@@ -26,7 +26,12 @@ export interface PostEmit {
   /** Alias filenames to write alongside an emitted AGENTS.md (e.g. "CLAUDE.md"). */
   readonly aliasFiles: readonly string[];
   /** Skill directories to deep-copy (used by platforms that ship skills as dirs). */
-  readonly skillDirs: readonly { readonly name: string; readonly dir: string }[];
+  readonly skillDirs: readonly {
+    readonly name: string;
+    readonly dir: string;
+    /** Platform-specific frontmatter fields to merge into the copied SKILL.md. */
+    readonly extraFrontmatter?: Record<string, unknown>;
+  }[];
   /** Destination directory for `skillDirs` relative to `outDir`. Defaults to `"skills"`. */
   readonly skillsDestRelative?: string;
   /**
