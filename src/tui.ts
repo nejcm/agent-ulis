@@ -474,6 +474,7 @@ async function executeWorkflow(plan: ReturnType<typeof resolveWorkflowPlan>): Pr
         backup: state.backup,
         sourceDir,
         destBase,
+        globalInstall: true,
         logger,
       });
     }

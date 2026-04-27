@@ -19,7 +19,7 @@ export interface InstallCmdOptions extends BuildCmdOptions {
  * Detect destination collisions, optionally confirm, then install generated configs.
  */
 export async function installCmd(options: InstallCmdOptions = {}): Promise<void> {
-  const { sourceDir, destBase } = resolveSource({ global: options.global, source: options.source });
+  const { sourceDir, destBase, mode } = resolveSource({ global: options.global, source: options.source });
   const targets = parseTargets(options) ?? PLATFORMS;
 
   const collisions = detectCollisions(destBase, targets);
@@ -38,6 +38,7 @@ export async function installCmd(options: InstallCmdOptions = {}): Promise<void>
   runInstall({
     sourceDir,
     destBase,
+    globalInstall: mode === "global",
     platforms: targets,
     backup: options.backup ?? false,
     rebuild: options.rebuild ?? true,

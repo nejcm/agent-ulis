@@ -31,6 +31,8 @@ export interface InstallOptions {
    * Where the intermediate build output lives. Defaults to `<sourceDir>/generated/`.
    */
   readonly outputDir?: string;
+  /** Install skills globally (`npx skills ... -g`) instead of project-local. */
+  readonly globalInstall?: boolean;
   readonly backup?: boolean;
   readonly rebuild?: boolean;
   readonly logger?: Logger;
@@ -94,6 +96,7 @@ export function runInstall(options: InstallOptions): readonly Platform[] {
   const destBase = resolve(options.destBase);
   const outputDir = resolve(options.outputDir ?? join(sourceDir, ULIS_GENERATED_DIRNAME));
   const platforms = options.platforms ? uniquePlatforms(options.platforms) : [...PLATFORMS];
+  const globalInstall = options.globalInstall ?? destBase === resolve(homedir());
   const backup = options.backup ?? false;
   const rebuild = options.rebuild ?? false;
 
@@ -125,7 +128,16 @@ export function runInstall(options: InstallOptions): readonly Platform[] {
 
   const timestamp = makeTimestamp();
   for (const platform of platforms) {
-    const context: InstallContext = { outputDir, destBase, backup, timestamp, plugins, skills: skillsConfig, logger };
+    const context: InstallContext = {
+      outputDir,
+      destBase,
+      globalInstall,
+      backup,
+      timestamp,
+      plugins,
+      skills: skillsConfig,
+      logger,
+    };
     switch (platform) {
       case "opencode":
         installOpencode(context);
@@ -145,10 +157,10 @@ export function runInstall(options: InstallOptions): readonly Platform[] {
     }
   }
 
-  const globalSkills = skillsConfig["*"]?.skills ?? [];
-  if (globalSkills.length > 0) {
-    logHeader(logger, "Installing Global Skills");
-    installSkills(globalSkills, "*", logger);
+  const allSkills = skillsConfig["*"]?.skills ?? [];
+  if (allSkills.length > 0) {
+    logHeader(logger, "Installing External Skills");
+    installSkills(allSkills, "*", destBase, globalInstall, logger);
   }
 
   logHeader(logger, "Installation Complete");
@@ -158,6 +170,7 @@ export function runInstall(options: InstallOptions): readonly Platform[] {
 interface InstallContext {
   readonly outputDir: string;
   readonly destBase: string;
+  readonly globalInstall: boolean;
   readonly backup: boolean;
   readonly timestamp: string;
   readonly plugins: PluginsConfig;
@@ -176,7 +189,7 @@ function installOpencode(context: InstallContext): void {
 
   const skills = context.skills.opencode?.skills ?? [];
   if (skills.length > 0) {
-    installSkills(skills, "opencode", context.logger);
+    installSkills(skills, "opencode", context.destBase, context.globalInstall, context.logger);
   }
 }
 
@@ -220,7 +233,7 @@ function installClaude(context: InstallContext): void {
 
   const claudeSkills = context.skills.claude?.skills ?? [];
   if (claudeSkills.length > 0) {
-    installSkills(claudeSkills, "claude", context.logger);
+    installSkills(claudeSkills, "claude", context.destBase, context.globalInstall, context.logger);
   }
 }
 
@@ -233,7 +246,7 @@ function installCodex(context: InstallContext): void {
 
   const skills = context.skills.codex?.skills ?? [];
   if (skills.length > 0) {
-    installSkills(skills, "codex", context.logger);
+    installSkills(skills, "codex", context.destBase, context.globalInstall, context.logger);
   }
 }
 
@@ -262,7 +275,7 @@ function installCursor(context: InstallContext): void {
 
   const skills = context.skills.cursor?.skills ?? [];
   if (skills.length > 0) {
-    installSkills(skills, "cursor", context.logger);
+    installSkills(skills, "cursor", context.destBase, context.globalInstall, context.logger);
   }
 }
 
@@ -437,21 +450,28 @@ const SKILL_PLATFORM_AGENT_NAMES: Partial<Record<Platform, string>> = {
 function installSkills(
   skills: readonly { key?: string; name: string; args?: readonly string[] }[],
   platform: Platform | "*",
+  installBaseDir: string,
+  globalInstall: boolean,
   logger?: Logger,
 ): void {
   if (skills.length === 0) return;
-  const agentFlags =
-    platform === "*"
-      ? Object.values(SKILL_PLATFORM_AGENT_NAMES)
-          .map((name) => ["-a", name])
-          .flat()
-      : ["-a", SKILL_PLATFORM_AGENT_NAMES[platform] ?? platform];
+  const agentNames =
+    platform === "*" ? Object.values(SKILL_PLATFORM_AGENT_NAMES) : [SKILL_PLATFORM_AGENT_NAMES[platform] ?? platform];
+  const agentFlags = ["-a", ...agentNames];
 
   for (const skill of skills) {
-    const npxArgs = ["skills@latest", "add", skill.name, ...agentFlags, "--yes", ...(skill.args ?? [])];
+    const npxArgs = [
+      "skills@latest",
+      "add",
+      skill.name,
+      ...agentFlags,
+      ...(globalInstall ? ["-g"] : ["--project"]),
+      "--yes",
+      ...(skill.args ?? []),
+    ];
     const result = runCommand("npx", npxArgs, {
       stdio: ["ignore", "pipe", "pipe"],
-      cwd: homedir(),
+      cwd: installBaseDir,
       shell: process.platform === "win32",
       encoding: "utf8",
     });
