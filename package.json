@@ -34,7 +34,7 @@
   "scripts": {
     "build": "tsup && bun run gen:schemas",
     "dev": "tsx src/cli.ts build --source example",
-    "dev:install": "tsx src/cli.ts install --global --yes",
+    "dev:install": "tsx src/cli.ts install --yes",
     "clean": "rimraf dist",
     "format:check": "oxfmt --check .",
     "format": "oxfmt .",
