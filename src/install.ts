@@ -6,7 +6,7 @@ import { basename, join, resolve } from "node:path";
 import { runBuild, type Logger } from "./build.js";
 import { ULIS_GENERATED_DIRNAME } from "./config.js";
 import { loadPlugins } from "./parsers/plugins.js";
-import { loadSkills } from "./parsers/skills.js";
+import { loadSkills, mergeSkillsConfigs } from "./parsers/skills.js";
 import {
   PLATFORM_DIRS,
   PLATFORM_LABELS,
@@ -37,7 +37,7 @@ export interface InstallOptions {
   readonly backup?: boolean;
   readonly rebuild?: boolean;
   readonly logger?: Logger;
-  /** Resolved presets to merge at build time. */
+  /** Resolved presets to merge at build time and for external skill installs. */
   readonly presets?: readonly ResolvedPreset[];
 }
 
@@ -127,7 +127,10 @@ export function runInstall(options: InstallOptions): readonly Platform[] {
   }
 
   const plugins = loadPlugins(sourceDir);
-  const skillsConfig = loadSkills(sourceDir);
+  const skillsConfig = mergeSkillsConfigs([
+    ...(options.presets ?? []).map((preset) => loadSkills(preset.dir)),
+    loadSkills(sourceDir),
+  ]);
 
   const timestamp = makeTimestamp();
   for (const platform of platforms) {
