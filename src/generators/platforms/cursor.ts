@@ -6,8 +6,8 @@ import { enabledSkillsFor } from "../../parsers/skill.js";
 import { mcpServersFor, translateEnvMap } from "../../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../../utils/policy-comments.js";
 import { mapTools } from "../../utils/tool-mapper.js";
-import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
 import { extraToYamlLines } from "../shared/yaml.js";
+import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
 
 export function generateCursor(project: ProjectBundle): GenerationResult {
   const artifacts: FileArtifact[] = [];

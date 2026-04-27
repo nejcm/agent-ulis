@@ -7,8 +7,8 @@ import { fileExists } from "../../utils/fs.js";
 import { mcpServersFor, normalizeLocalMcpCommand, translateEnvMap } from "../../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../../utils/policy-comments.js";
 import { mapTools } from "../../utils/tool-mapper.js";
+import { extraToYamlLines, serializeYamlFrontmatter, toYamlScalar } from "../shared/yaml.js";
 import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
-import { toYamlScalar, serializeYamlFrontmatter, extraToYamlLines } from "../shared/yaml.js";
 
 /** Serialize the YAML frontmatter block for a Claude subagent. */
 function subagentFrontmatter(agent: ParsedAgent): string {
@@ -136,7 +136,6 @@ function buildMcpBlock(mcp: ProjectBundle["mcp"]): Record<string, unknown> {
   }
   return mcpServers;
 }
-
 
 function buildSettings(
   permissions: ProjectBundle["permissions"],

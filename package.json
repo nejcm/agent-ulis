@@ -41,6 +41,7 @@
     "gen:reference": "tsx src/tools/gen-reference.ts",
     "gen:schemas": "tsx src/tools/gen-json-schema.ts",
     "lint": "tsc --noEmit",
+    "test:coverage": "bun test --coverage",
     "test:update": "bun test --update-snapshots",
     "test": "bun test",
     "tui": "tsx src/cli.ts tui",

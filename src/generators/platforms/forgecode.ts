@@ -6,9 +6,9 @@ import { enabledSkillsFor } from "../../parsers/skill.js";
 import { mcpServersFor, translateEnvMap } from "../../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../../utils/policy-comments.js";
 import { mapTools } from "../../utils/tool-mapper.js";
-import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
 import { buildRulesIndex } from "../shared/rules-index.js";
 import { extraToYamlLines } from "../shared/yaml.js";
+import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
 
 const EFFORT_MAP: Record<string, string> = { low: "low", medium: "medium", high: "high", max: "high" };
 
@@ -47,8 +47,13 @@ export function generateForgecode(project: ProjectBundle): GenerationResult {
       for (const tool of tools) lines.push(`  - ${tool}`);
     }
     if (reasoning) {
-      const { enabled: _e, effort: _ef, max_tokens: _mt, exclude: _ex, ...reasoningExtra } =
-        reasoning as Record<string, unknown>;
+      const {
+        enabled: _e,
+        effort: _ef,
+        max_tokens: _mt,
+        exclude: _ex,
+        ...reasoningExtra
+      } = reasoning as Record<string, unknown>;
       lines.push("reasoning:");
       if ((reasoning as Record<string, unknown>).enabled !== undefined)
         lines.push(`  enabled: ${(reasoning as Record<string, unknown>).enabled}`);

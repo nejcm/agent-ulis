@@ -7,7 +7,9 @@
  * which keeps them fast and deterministic.
  */
 import { describe, expect, it } from "bun:test";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
+
+import { parse as parseToml } from "smol-toml";
 
 import { generate } from "../src/generators/index.js";
 import type { FileArtifact, ProjectBundle } from "../src/generators/types.js";
@@ -21,6 +23,7 @@ import type { Platform } from "../src/platforms.js";
 import { UlisConfigSchema } from "../src/schema.js";
 import { validateCollisions } from "../src/validators/collisions.js";
 import { validateCrossRefs } from "../src/validators/cross-refs.js";
+import { GOLDEN_ARTIFACTS } from "./golden-artifacts.js";
 
 const fixturesDir = resolve(join(import.meta.dirname, "fixtures"));
 
@@ -52,6 +55,26 @@ function get(map: Map<string, string>, path: string): string {
   const v = map.get(path);
   if (v === undefined) throw new Error(`Artifact not found: ${path}. Have: ${[...map.keys()].join(", ")}`);
   return v;
+}
+
+function normalizeText(value: string): string {
+  return value.replace(/\r\n/g, "\n").trimEnd();
+}
+
+function assertSafeRelativeArtifactPath(path: string): void {
+  const normalized = path.replace(/\\/g, "/");
+  expect(isAbsolute(path)).toBe(false);
+  expect(/^[A-Za-z]:[\\/]/u.test(path)).toBe(false);
+  expect(normalized.startsWith("/")).toBe(false);
+  expect(normalized.split("/")).not.toContain("..");
+  expect(normalized.split("/")).not.toContain("");
+}
+
+function assertMarkdownFrontmatter(content: string): void {
+  if (!content.startsWith("---\n")) return;
+  const end = content.indexOf("\n---\n", 4);
+  expect(end).toBeGreaterThan(0);
+  expect(content.slice(end + "\n---\n".length).length).toBeGreaterThan(0);
 }
 
 // ─── Claude ──────────────────────────────────────────────────────────────────
@@ -209,6 +232,37 @@ describe("ForgeCode generator", () => {
 // ─── Generator boundary ──────────────────────────────────────────────────────
 
 describe("Generator boundary", () => {
+  it("emits structurally valid and safe relative artifacts", () => {
+    for (const platform of ["claude", "codex", "cursor", "opencode", "forgecode"] as const) {
+      const result = generate(platform, buildProject());
+      expect(result).toBeDefined();
+      for (const art of result!.artifacts as readonly FileArtifact[]) {
+        const path = art.path.replace(/\\/g, "/");
+        const contents = typeof art.contents === "string" ? art.contents : art.contents.toString("utf8");
+        assertSafeRelativeArtifactPath(path);
+
+        if (path.endsWith(".json")) {
+          expect(() => JSON.parse(contents)).not.toThrow();
+        }
+        if (path.endsWith(".toml")) {
+          expect(() => parseToml(contents)).not.toThrow();
+        }
+        if (path.endsWith(".md") || path.endsWith(".mdc")) {
+          assertMarkdownFrontmatter(contents);
+        }
+      }
+    }
+  });
+
+  it("matches golden artifacts for representative platform outputs", () => {
+    for (const [platform, expectedByPath] of Object.entries(GOLDEN_ARTIFACTS)) {
+      const map = run(platform as Platform);
+      for (const [path, expected] of Object.entries(expectedByPath)) {
+        expect(normalizeText(get(map, path))).toBe(normalizeText(expected));
+      }
+    }
+  });
+
   it("is pure: two runs produce byte-identical artifacts", () => {
     const a = run("claude");
     const b = run("claude");

@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 
 import type { Platform } from "../platforms.js";
 import { mergeOrCopyDir } from "../utils/config-merger.js";
@@ -19,7 +19,7 @@ export function writeResult(result: GenerationResult, outDir: string, platform: 
   cleanDir(outDir);
 
   for (const artifact of result.artifacts) {
-    writeFile(join(outDir, artifact.path), artifact.contents as string);
+    writeFile(resolveArtifactPath(outDir, artifact.path), artifact.contents as string);
   }
 
   if (result.post.skillDirs.length > 0) {
@@ -53,4 +53,19 @@ export function writeResult(result: GenerationResult, outDir: string, platform: 
   }
 
   log.success(`${platform}: ${result.artifacts.length} artifact(s) written`);
+}
+
+function resolveArtifactPath(outDir: string, artifactPath: string): string {
+  if (isAbsolute(artifactPath) || /^[A-Za-z]:[\\/]/u.test(artifactPath)) {
+    throw new Error(`Refusing to write absolute artifact path: ${artifactPath}`);
+  }
+
+  const root = resolve(outDir);
+  const target = resolve(root, artifactPath);
+  const rel = relative(root, target);
+  if (rel === ".." || rel.startsWith(`..\\`) || rel.startsWith("../") || isAbsolute(rel)) {
+    throw new Error(`Refusing to write artifact outside output directory: ${artifactPath}`);
+  }
+
+  return target;
 }

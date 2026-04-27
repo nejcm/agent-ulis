@@ -56,7 +56,11 @@ export function writeAgentsAliases(outDir: string, aliases: readonly string[]): 
  * (OpenCode, Cursor).
  */
 export function copySkillDirs(
-  skills: ReadonlyArray<{ readonly name: string; readonly dir: string; readonly extraFrontmatter?: Record<string, unknown> }>,
+  skills: ReadonlyArray<{
+    readonly name: string;
+    readonly dir: string;
+    readonly extraFrontmatter?: Record<string, unknown>;
+  }>,
   outSkillsDir: string,
 ): void {
   for (const skill of skills) {

@@ -7,9 +7,9 @@ import { enabledSkillsFor } from "../../parsers/skill.js";
 import { fileExists, readFile } from "../../utils/fs.js";
 import { mcpServersFor, translateEnvMap } from "../../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../../utils/policy-comments.js";
-import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
 import { buildRulesIndex } from "../shared/rules-index.js";
 import { serializeYamlFrontmatter } from "../shared/yaml.js";
+import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
 
 const OPENCODE_DEFAULT_MODEL = "anthropic/sonnet";
 const OPENCODE_SMALL_MODEL = "opencode/kimi-k2.5-free";
