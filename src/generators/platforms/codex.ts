@@ -9,6 +9,7 @@ import { mcpServersFor } from "../../utils/mcp-block.js";
 import { buildPolicyCommentBlock } from "../../utils/policy-comments.js";
 import { toPlatformSkillMarkdown } from "../../utils/skill-frontmatter.js";
 import { buildRulesIndex } from "../shared/rules-index.js";
+import { extraToYamlLines } from "../shared/yaml.js";
 import type { FileArtifact, GenerationResult, ProjectBundle } from "../types.js";
 
 const CODEX_DEFAULT_MODEL = "gpt-5.4";
@@ -194,6 +195,20 @@ export function generateCodex(project: ProjectBundle): GenerationResult {
     const fm = skill.frontmatter;
     const codexPlatform = fm.platforms?.codex;
 
+    // Destructure known/specially-handled fields; everything else passes through.
+    const {
+      enabled: _enabled,
+      model: _model,
+      displayName: _displayName,
+      shortDescription: _shortDescription,
+      iconSmall: _iconSmall,
+      iconLarge: _iconLarge,
+      brandColor: _brandColor,
+      defaultPrompt: _defaultPrompt,
+      mcpDependencies: _mcpDependencies,
+      ...codexSkillExtra
+    } = (codexPlatform ?? {}) as Record<string, unknown>;
+
     const skillMdPath = join(skill.dir, "SKILL.md");
     if (!fileExists(skillMdPath)) {
       continue;
@@ -213,7 +228,8 @@ export function generateCodex(project: ProjectBundle): GenerationResult {
       codexPlatform?.defaultPrompt;
     const hasDeps = codexPlatform?.mcpDependencies?.length;
     const hasModel = !!codexPlatform?.model;
-    const needsYaml = hasUiConfig || hasDeps || hasModel || !fm.allowImplicitInvocation;
+    const hasExtra = Object.keys(codexSkillExtra).length > 0;
+    const needsYaml = hasUiConfig || hasDeps || hasModel || hasExtra || !fm.allowImplicitInvocation;
 
     if (needsYaml) {
       const yamlLines: string[] = [];
@@ -252,6 +268,8 @@ export function generateCodex(project: ProjectBundle): GenerationResult {
           if (dep.url) yamlLines.push(`      url: ${toYamlString(dep.url)}`);
         }
       }
+
+      yamlLines.push(...extraToYamlLines(codexSkillExtra));
 
       artifacts.push({
         path: join("skills", skill.name, "agents", "openai.yaml"),

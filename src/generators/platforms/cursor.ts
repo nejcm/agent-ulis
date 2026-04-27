@@ -100,7 +100,12 @@ export function generateCursor(project: ProjectBundle): GenerationResult {
     post: {
       rawDirs: [join(project.sourceDir, "raw", "common"), join(project.sourceDir, "raw", "cursor")],
       aliasFiles: [],
-      skillDirs: enabledSkillsFor(project.skills, "cursor").map((s) => ({ name: s.name, dir: s.dir })),
+      skillDirs: enabledSkillsFor(project.skills, "cursor").map((s) => {
+        const p = s.frontmatter.platforms?.cursor;
+        const { enabled: _e, model: _m, ...extra } = (p ?? {}) as Record<string, unknown>;
+        const model = p?.model ?? s.frontmatter.model;
+        return { name: s.name, dir: s.dir, extraFrontmatter: { ...(model ? { model } : {}), ...extra } };
+      }),
     },
   };
 }

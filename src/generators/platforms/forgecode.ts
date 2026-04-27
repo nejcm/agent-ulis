@@ -114,7 +114,12 @@ export function generateForgecode(project: ProjectBundle): GenerationResult {
     post: {
       rawDirs: [join(project.sourceDir, "raw", "common"), join(project.sourceDir, "raw", "forgecode")],
       aliasFiles: [],
-      skillDirs: enabledSkillsFor(project.skills, "forgecode").map((s) => ({ name: s.name, dir: s.dir })),
+      skillDirs: enabledSkillsFor(project.skills, "forgecode").map((s) => {
+        const p = s.frontmatter.platforms?.forgecode;
+        const { enabled: _e, model: _m, ...extra } = (p ?? {}) as Record<string, unknown>;
+        const model = p?.model ?? s.frontmatter.model;
+        return { name: s.name, dir: s.dir, extraFrontmatter: { ...(model ? { model } : {}), ...extra } };
+      }),
       skillsDestRelative: join(".forge", "skills"),
       appendAfterRaw,
     },
