@@ -40,7 +40,7 @@ ulis init
 
 This creates:
 
-```
+```yaml
 .ulis/
 ├── config.yaml          # version + project name
 ├── mcp.yaml             # MCP server definitions
