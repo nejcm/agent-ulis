@@ -3,8 +3,9 @@ import { ProcessTerminal, VStack, cel } from "@cel-tui/core";
 import type { Logger } from "./build.js";
 import { listPresets } from "./presets.js";
 import { initializeMissingSource, runTuiAction } from "./tui/actions.js";
+import { readClipboardText } from "./tui/clipboard.js";
 import { renderScreen } from "./tui/render.js";
-import { createInitialState, handleTuiKey, type TuiState } from "./tui/state.js";
+import { appendTextInput, createInitialState, handleTuiKey, type TuiState } from "./tui/state.js";
 
 const state: TuiState = createInitialState();
 
@@ -56,6 +57,14 @@ async function handleEffect(effect: ReturnType<typeof handleTuiKey>): Promise<vo
       await initializeMissingSource(state, logger);
       if (pendingAction != null) await runTuiAction(state, pendingAction, logger);
     });
+    return;
+  }
+
+  if (effect.type === "pasteClipboard") {
+    if (!appendTextInput(state, readClipboardText())) {
+      state.notice = "Clipboard is empty or contains unsupported text.";
+    }
+    cel.render();
     return;
   }
 

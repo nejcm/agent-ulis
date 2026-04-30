@@ -245,6 +245,40 @@ describe("tui state", () => {
     expect(state.textInput).toBe("foob");
   });
 
+  it("customSource appends pasted text", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+    state.textInput = "";
+
+    handleTuiKey(state, "C:\\Work\\Personal\\ulis\\.ulis");
+
+    expect(state.textInput).toBe("C:\\Work\\Personal\\ulis\\.ulis");
+  });
+
+  it("customSource appends bracketed pasted text", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+    state.textInput = "";
+
+    handleTuiKey(state, "\u001b[200~C:\\Work\\Personal\\ulis\\.ulis\u001b[201~");
+
+    expect(state.textInput).toBe("C:\\Work\\Personal\\ulis\\.ulis");
+  });
+
+  it("customSource ctrl+v requests clipboard paste", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+
+    expect(handleTuiKey(state, "\u0016")).toEqual({ type: "pasteClipboard" });
+  });
+
+  it("customSource cmd+v requests clipboard paste", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+
+    expect(handleTuiKey(state, "cmd+v")).toEqual({ type: "pasteClipboard" });
+  });
+
   it("customSource backspace removes last character", () => {
     const state = createInitialState();
     state.screen = "customSource";

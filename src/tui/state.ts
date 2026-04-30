@@ -55,7 +55,8 @@ export type TuiEffect =
   | { readonly type: "none" }
   | { readonly type: "exit"; readonly code: number }
   | { readonly type: "start"; readonly action: Exclude<TuiAction, "init"> }
-  | { readonly type: "initSource" };
+  | { readonly type: "initSource" }
+  | { readonly type: "pasteClipboard" };
 
 type NavigationDirection = "up" | "down";
 
@@ -149,6 +150,14 @@ export function togglePlatformSelection(selected: readonly Platform[], platform:
 
 export function toggleAllPlatformSelections(selected: readonly Platform[]): Platform[] {
   return selected.length === PLATFORMS.length ? [] : [...PLATFORMS];
+}
+
+export function appendTextInput(state: TuiState, text: string): boolean {
+  const value = textInputValue(text);
+  if (value == null) return false;
+  state.textInput += value;
+  state.notice = "";
+  return true;
 }
 
 export function togglePresetSelection(selected: readonly string[], presetName: string): string[] {
@@ -312,10 +321,9 @@ function handleCustomSourceKey(state: TuiState, key: string): TuiEffect {
     return { type: "none" };
   }
 
-  if (key.length === 1) {
-    state.textInput += key;
-    state.notice = "";
-  }
+  if (isPasteKey(key)) return { type: "pasteClipboard" };
+
+  appendTextInput(state, key);
   return { type: "none" };
 }
 
@@ -445,6 +453,10 @@ function isToggleKey(key: string): boolean {
   return isConfirmKey(key) || isAnyKey(key, "x", " ", "space");
 }
 
+function isPasteKey(key: string): boolean {
+  return isAnyKey(key, "ctrl+v", "cmd+v", "command+v", "meta+v");
+}
+
 function isUpKey(key: string): boolean {
   return isAnyKey(key, "k", "up", "arrowup");
 }
@@ -471,14 +483,22 @@ function keyEventId(key: string): string {
   const direction = getNavigationDirection(key);
   if (direction) return `nav:${direction}`;
   if (isConfirmKey(key)) return "confirm";
+  if (isPasteKey(key)) return "paste";
   if (isAnyKey(key, " ", "space")) return "space";
   return key;
+}
+
+function textInputValue(key: string): string | undefined {
+  const text = key.replaceAll("\u001b[200~", "").replaceAll("\u001b[201~", "");
+  if (text.length === 0 || /[\u0000-\u001f\u007f]/.test(text)) return undefined;
+  return text;
 }
 
 function normalizeKey(rawKey: string): string {
   if (rawKey.length === 0) return rawKey;
 
   if (rawKey === "\u0003") return "ctrl+c";
+  if (rawKey === "\u0016") return "ctrl+v";
   if (isAnyKey(rawKey, "\r", "\n")) return "enter";
   if (isAnyKey(rawKey, "\u007f", "\u0008")) return "backspace";
   if (rawKey === "\u001b[3~") return "delete";
@@ -493,5 +513,10 @@ function normalizeKey(rawKey: string): string {
   if (isAnyKey(lowered, "del")) return "delete";
   if (isAnyKey(lowered, "esc")) return "escape";
 
-  return lowered.startsWith("ctrl+") ? lowered : rawKey;
+  return lowered.startsWith("ctrl+") ||
+    lowered.startsWith("cmd+") ||
+    lowered.startsWith("command+") ||
+    lowered.startsWith("meta+")
+    ? lowered
+    : rawKey;
 }

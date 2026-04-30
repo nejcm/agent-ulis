@@ -4,6 +4,7 @@ const celRender = mock(() => {});
 
 const runTuiActionMock = mock(() => {});
 const initializeMissingSourceMock = mock(async () => {});
+const readClipboardTextMock = mock(() => "");
 
 mock.module("@cel-tui/core", () => ({
   ProcessTerminal: class ProcessTerminal {},
@@ -27,6 +28,10 @@ mock.module("./tui/actions.js", () => ({
   },
 }));
 
+mock.module("./tui/clipboard.js", () => ({
+  readClipboardText: readClipboardTextMock,
+}));
+
 const { __test } = await import("./tui.js");
 
 describe("tui effect flow", () => {
@@ -35,6 +40,7 @@ describe("tui effect flow", () => {
     celRender.mockClear();
     runTuiActionMock.mockReset();
     initializeMissingSourceMock.mockReset();
+    readClipboardTextMock.mockReset();
   });
 
   it("handles start effect success and lands on result screen", async () => {
@@ -75,5 +81,26 @@ describe("tui effect flow", () => {
     expect(state.pendingAction).toBeUndefined();
     expect(state.screen).toBe("result");
     expect(state.resultTitle).toBe("Initialize source and Build Complete");
+  });
+
+  it("handles clipboard paste effect in custom source input", async () => {
+    readClipboardTextMock.mockImplementation(() => "C:\\Work\\Personal\\ulis\\.ulis");
+    const state = __test.getState();
+    state.screen = "customSource";
+
+    await __test.handleEffect({ type: "pasteClipboard" });
+
+    expect(state.textInput).toBe("C:\\Work\\Personal\\ulis\\.ulis");
+    expect(celRender).toHaveBeenCalled();
+  });
+
+  it("shows a notice when clipboard paste has no usable text", async () => {
+    readClipboardTextMock.mockImplementation(() => "");
+    const state = __test.getState();
+    state.screen = "customSource";
+
+    await __test.handleEffect({ type: "pasteClipboard" });
+
+    expect(state.notice).toContain("Clipboard");
   });
 });
