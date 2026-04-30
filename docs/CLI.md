@@ -89,13 +89,13 @@ Deep-merge preserves user-owned keys in `settings.json`, `.claude.json`, `mcp.js
 
 ## `ulis tui`
 
-Launch the interactive terminal UI. Useful when you want to pick generation and install targets separately, toggle backups, and stream progress in the same screen.
+Launch the interactive terminal dashboard. Use it to choose a source, select presets and platforms, validate without writing files, build generated outputs, or install with an explicit destination review.
 
 ```
 ulis tui
 ```
 
-The TUI reads from `~/.ulis/` and writes to the corresponding home directories. It's the equivalent of `ulis install --global` with a point-and-click selection.
+The TUI supports project `.ulis/`, global `~/.ulis/`, and custom source paths. Install destinations are explicit: project-local configs or home-level configs. If a project or global source is missing, the TUI can initialize it before continuing. Installs require a review screen and default to backing up existing configs.
 
 ---
 

@@ -38,6 +38,24 @@ export interface BuildOptions {
   readonly presets?: readonly ResolvedPreset[];
 }
 
+export interface AnalyzeProjectOptions {
+  /**
+   * Path to the ulis source tree (e.g. `./.ulis/` or `~/.ulis/` or a fixture path).
+   * Required.
+   */
+  readonly sourceDir: string;
+  readonly logger?: Logger;
+  /** Resolved presets to merge into the project before validating. Applied in order; base wins. */
+  readonly presets?: readonly ResolvedPreset[];
+}
+
+export interface ProjectAnalysis {
+  readonly project: ReturnType<typeof parseProject>;
+  readonly diagnostics: readonly Diagnostic[];
+  readonly errorCount: number;
+  readonly warningCount: number;
+}
+
 export interface BuildResult {
   readonly targets: readonly Platform[];
   readonly sourceDir: string;
@@ -45,18 +63,11 @@ export interface BuildResult {
 }
 
 /**
- * Parse, validate, and generate all requested platform outputs.
+ * Parse and validate a source tree without writing generated files.
  */
-export function runBuild(options: BuildOptions): BuildResult {
+export function analyzeProject(options: AnalyzeProjectOptions): ProjectAnalysis {
   const logger = options.logger ?? defaultLogger;
   const sourceDir = resolve(options.sourceDir);
-  const outputDir = resolve(options.outputDir ?? join(sourceDir, ULIS_GENERATED_DIRNAME));
-  const activeTargets = options.targets ? uniquePlatforms(options.targets) : [...PLATFORMS];
-
-  logger.header("ULIS Build");
-  logger.info(`Source: ${sourceDir}`);
-  logger.info(`Output: ${outputDir}`);
-  logger.info(`Targets: ${activeTargets.join(", ")}`);
 
   logger.header("Parsing");
 
@@ -113,9 +124,28 @@ export function runBuild(options: BuildOptions): BuildResult {
   }
   logger.success(`Validation passed (${warningCount} warning(s))`);
 
+  return { project: parsed, diagnostics, errorCount, warningCount };
+}
+
+/**
+ * Parse, validate, and generate all requested platform outputs.
+ */
+export function runBuild(options: BuildOptions): BuildResult {
+  const logger = options.logger ?? defaultLogger;
+  const sourceDir = resolve(options.sourceDir);
+  const outputDir = resolve(options.outputDir ?? join(sourceDir, ULIS_GENERATED_DIRNAME));
+  const activeTargets = options.targets ? uniquePlatforms(options.targets) : [...PLATFORMS];
+
+  logger.header("ULIS Build");
+  logger.info(`Source: ${sourceDir}`);
+  logger.info(`Output: ${outputDir}`);
+  logger.info(`Targets: ${activeTargets.join(", ")}`);
+
+  const analysis = analyzeProject({ sourceDir, logger, presets: options.presets });
+
   for (const target of activeTargets) {
     const outDir = join(outputDir, target);
-    const result = generate(target, parsed);
+    const result = generate(target, analysis.project);
     if (!result) throw new Error(`No generator registered for platform: ${target}`);
     writeResult(result, outDir, target);
   }

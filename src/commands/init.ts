@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { basename, join } from "node:path";
 
 import { ULIS_GENERATED_DIRNAME, ULIS_SOURCE_DIRNAME } from "../config.js";
+import type { Logger } from "../build.js";
 import {
   DEFAULT_SCHEMA_BASE,
   renderConfig,
@@ -17,6 +18,7 @@ import { logger as log } from "../utils/logger.js";
 
 export interface InitOptions {
   readonly global?: boolean;
+  readonly logger?: Logger;
 }
 
 const SUBDIRS = ["agents", "skills", "commands", "raw", "rules"] as const;
@@ -25,6 +27,7 @@ const SUBDIRS = ["agents", "skills", "commands", "raw", "rules"] as const;
  * Scaffold a new `.ulis` source tree in project or global mode.
  */
 export async function initCmd(options: InitOptions = {}): Promise<void> {
+  const logger = options.logger ?? log;
   const cwd = process.cwd();
   const targetRoot = options.global ? homedir() : cwd;
   const targetDir = join(targetRoot, ULIS_SOURCE_DIRNAME);
@@ -39,8 +42,8 @@ export async function initCmd(options: InitOptions = {}): Promise<void> {
     schemaBase: DEFAULT_SCHEMA_BASE,
   };
 
-  log.header(`ulis init ${options.global ? "(global)" : "(project)"}`);
-  log.info(`Target: ${targetDir}`);
+  logger.header(`ulis init ${options.global ? "(global)" : "(project)"}`);
+  logger.info(`Target: ${targetDir}`);
 
   mkdirSync(targetDir, { recursive: true });
   for (const sub of SUBDIRS) {
@@ -58,23 +61,23 @@ export async function initCmd(options: InitOptions = {}): Promise<void> {
   writeFileSync(join(targetDir, "skills.yaml"), renderSkills(context));
   writeFileSync(join(targetDir, "rules", "code-style.md"), renderRuleCodeStyle(context));
 
-  log.success(`Scaffolded ${targetDir}`);
+  logger.success(`Scaffolded ${targetDir}`);
 
   if (!options.global) {
-    appendGitignore(cwd);
-    log.info("");
-    log.info("Next steps:");
-    log.dim(`  - Add agents to ${ULIS_SOURCE_DIRNAME}/agents/*.md`);
-    log.dim(`  - Declare MCP servers in ${ULIS_SOURCE_DIRNAME}/mcp.yaml`);
-    log.dim(`  - Run 'ulis install' to generate and install platform configs`);
-    log.info("");
-    log.dim("Tip: consider adding .claude/, .cursor/, .codex/, .opencode/, .forge/ to .gitignore");
-    log.dim("     if you don't want to commit generated configs.");
+    appendGitignore(cwd, logger);
+    logger.info("");
+    logger.info("Next steps:");
+    logger.dim(`  - Add agents to ${ULIS_SOURCE_DIRNAME}/agents/*.md`);
+    logger.dim(`  - Declare MCP servers in ${ULIS_SOURCE_DIRNAME}/mcp.yaml`);
+    logger.dim(`  - Run 'ulis install' to generate and install platform configs`);
+    logger.info("");
+    logger.dim("Tip: consider adding .claude/, .cursor/, .codex/, .opencode/, .forge/ to .gitignore");
+    logger.dim("     if you don't want to commit generated configs.");
   } else {
-    log.info("");
-    log.info("Next steps:");
-    log.dim(`  - Add agents to ~/${ULIS_SOURCE_DIRNAME}/agents/*.md`);
-    log.dim(`  - Run 'ulis install --global' to generate and install to ~/.claude/, ~/.codex/, etc.`);
+    logger.info("");
+    logger.info("Next steps:");
+    logger.dim(`  - Add agents to ~/${ULIS_SOURCE_DIRNAME}/agents/*.md`);
+    logger.dim(`  - Run 'ulis install --global' to generate and install to ~/.claude/, ~/.codex/, etc.`);
   }
 }
 
@@ -89,7 +92,7 @@ function readProjectName(cwd: string): string | undefined {
   }
 }
 
-function appendGitignore(cwd: string): void {
+function appendGitignore(cwd: string, logger: Logger = log): void {
   const ignorePath = join(cwd, ".gitignore");
   const entry = `/${ULIS_SOURCE_DIRNAME}/${ULIS_GENERATED_DIRNAME}/`;
 
@@ -98,12 +101,12 @@ function appendGitignore(cwd: string): void {
     content = readFileSync(ignorePath, "utf8");
     const lines = content.split(/\r?\n/);
     if (lines.some((line) => line.trim() === entry || line.trim() === entry.slice(1))) {
-      log.dim(`.gitignore already contains ${entry}`);
+      logger.dim(`.gitignore already contains ${entry}`);
       return;
     }
     if (!content.endsWith("\n")) content += "\n";
   }
   content += `\n# ulis build output\n${entry}\n`;
   writeFileSync(ignorePath, content);
-  log.success(`Updated .gitignore (${entry})`);
+  logger.success(`Updated .gitignore (${entry})`);
 }

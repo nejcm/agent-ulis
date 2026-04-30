@@ -83,7 +83,7 @@ ulis install --global   # deploys to ~/.claude/, ~/.codex/, ~/.cursor/, ~/.openc
 | `ulis build`   | Generate configs into `<source>/generated/` without installing           |
 | `ulis install` | Build, then deploy generated configs to the target platform directories  |
 | `ulis preset`  | List available presets from `~/.ulis/presets/`                           |
-| `ulis tui`     | Launch the interactive terminal UI                                       |
+| `ulis tui`     | Launch the interactive dashboard for source, presets, build, and install |
 
 ### Common flags
 
