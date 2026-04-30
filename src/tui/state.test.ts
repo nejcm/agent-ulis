@@ -411,6 +411,23 @@ describe("tui state", () => {
     expect(state.textInput).toBe("l");
   });
 
+  it("allows repeated text key events outside dedupe window", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+    state.textInput = "";
+    const originalNow = Date.now;
+    let now = 3_000;
+    Date.now = () => now;
+    try {
+      handleTuiKey(state, "l");
+      now += 45;
+      handleTuiKey(state, "l");
+    } finally {
+      Date.now = originalNow;
+    }
+    expect(state.textInput).toBe("ll");
+  });
+
   it("accepts return alias as toggle in install review", () => {
     const state = createInitialState();
     state.screen = "installReview";

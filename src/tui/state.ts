@@ -59,7 +59,7 @@ export type TuiEffect =
 
 type NavigationDirection = "up" | "down";
 
-const KEY_DUPLICATE_WINDOW_MS = 40;
+const KEY_DUPLICATE_WINDOW_MS = 35;
 let lastKeyEvent: { readonly id: string; readonly at: number } | undefined;
 
 export const DASHBOARD_ITEMS = [
@@ -160,7 +160,7 @@ export function togglePresetSelection(selected: readonly string[], presetName: s
 export function handleTuiKey(state: TuiState, key: string): TuiEffect {
   key = normalizeKey(key);
   if (state.screen === "running") return { type: "none" };
-  if (isDuplicateKeyEvent(state, key)) return { type: "none" };
+  if (isDuplicateKeyEvent(key)) return { type: "none" };
 
   if (isAnyKey(key, "ctrl+c", "q") && state.screen !== "customSource") {
     return { type: "exit", code: 0 };
@@ -459,9 +459,7 @@ function getNavigationDirection(key: string): NavigationDirection | undefined {
   return undefined;
 }
 
-function isDuplicateKeyEvent(state: TuiState, key: string): boolean {
-  // Preserve fast/free typing in custom source input mode.
-  if (state.screen === "customSource" && key.length === 1) return false;
+function isDuplicateKeyEvent(key: string): boolean {
   const id = keyEventId(key);
   const now = Date.now();
   const duplicate = lastKeyEvent != null && lastKeyEvent.id === id && now - lastKeyEvent.at <= KEY_DUPLICATE_WINDOW_MS;
