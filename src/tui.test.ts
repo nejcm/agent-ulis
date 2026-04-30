@@ -21,6 +21,10 @@ mock.module("@cel-tui/core", () => ({
 mock.module("./tui/actions.js", () => ({
   runTuiAction: runTuiActionMock,
   initializeMissingSource: initializeMissingSourceMock,
+  __test: {
+    setRuntimeDependencies: () => undefined,
+    resetRuntimeDependencies: () => undefined,
+  },
 }));
 
 const { __test } = await import("./tui.js");

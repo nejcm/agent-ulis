@@ -49,7 +49,8 @@ export function buildRulesIndex(
     "",
   ];
   for (const rule of enabledRules) {
-    let line = `- **${rule.name}** (\`rules/${rule.filename}\`)`;
+    const referencedRulePath = join(opts.artifactPrefix, rule.filename).replaceAll("\\", "/");
+    let line = `- **${rule.name}** (\`${referencedRulePath}\`)`;
     if (rule.frontmatter.description) line += `: ${rule.frontmatter.description}`;
     if (rule.frontmatter.paths?.length) {
       line += ` — apply when working in ${rule.frontmatter.paths.join(", ")}`;

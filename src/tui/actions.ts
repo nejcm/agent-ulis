@@ -6,6 +6,14 @@ import { initCmd } from "../commands/init.js";
 import { runInstall } from "../install.js";
 import { planSource, selectedPresets, type TuiAction, type TuiState } from "./state.js";
 
+interface RuntimeDependencies {
+  spawn: typeof spawn;
+  createInterface: typeof createInterface;
+}
+
+const defaultRuntimeDependencies: RuntimeDependencies = { spawn, createInterface };
+let runtimeDependencies: RuntimeDependencies = { ...defaultRuntimeDependencies };
+
 export async function runTuiAction(state: TuiState, action: Exclude<TuiAction, "init">, logger: Logger): Promise<void> {
   const planned = planSource(state);
   const presets = selectedPresets(state);
@@ -63,15 +71,18 @@ async function runActionInChildProcess(
   }
 
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(process.execPath, args, { stdio: ["ignore", "pipe", "pipe"] });
+    const child = runtimeDependencies.spawn(process.execPath, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, ULIS_NON_INTERACTIVE: "1" },
+    });
 
-    const stdout = createInterface({ input: child.stdout });
+    const stdout = runtimeDependencies.createInterface({ input: child.stdout });
     stdout.on("line", (line) => {
       const text = stripAnsi(line).trim();
       if (text.length > 0) logger.dim(text);
     });
 
-    const stderr = createInterface({ input: child.stderr });
+    const stderr = runtimeDependencies.createInterface({ input: child.stderr });
     stderr.on("line", (line) => {
       const text = stripAnsi(line).trim();
       if (text.length > 0) logger.warn(text);
@@ -90,3 +101,12 @@ async function runActionInChildProcess(
 function stripAnsi(value: string): string {
   return value.replace(/\u001b\[[0-9;]*m/gu, "");
 }
+
+export const __test = {
+  setRuntimeDependencies(overrides: Partial<RuntimeDependencies>): void {
+    runtimeDependencies = { ...runtimeDependencies, ...overrides };
+  },
+  resetRuntimeDependencies(): void {
+    runtimeDependencies = { ...defaultRuntimeDependencies };
+  },
+};
