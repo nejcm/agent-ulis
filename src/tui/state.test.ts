@@ -8,6 +8,7 @@ import {
   createInitialState,
   handleTuiKey,
   planSource,
+  rememberCustomSource,
   selectedPresets,
   togglePresetSelection,
   type TuiState,
@@ -245,6 +246,40 @@ describe("tui state", () => {
     expect(state.textInput).toBe("foob");
   });
 
+  it("customSource appends pasted text", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+    state.textInput = "";
+
+    handleTuiKey(state, "C:\\Work\\Personal\\ulis\\.ulis");
+
+    expect(state.textInput).toBe("C:\\Work\\Personal\\ulis\\.ulis");
+  });
+
+  it("customSource appends bracketed pasted text", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+    state.textInput = "";
+
+    handleTuiKey(state, "\u001b[200~C:\\Work\\Personal\\ulis\\.ulis\u001b[201~");
+
+    expect(state.textInput).toBe("C:\\Work\\Personal\\ulis\\.ulis");
+  });
+
+  it("customSource ctrl+v requests clipboard paste", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+
+    expect(handleTuiKey(state, "\u0016")).toEqual({ type: "pasteClipboard" });
+  });
+
+  it("customSource cmd+v requests clipboard paste", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+
+    expect(handleTuiKey(state, "cmd+v")).toEqual({ type: "pasteClipboard" });
+  });
+
   it("customSource backspace removes last character", () => {
     const state = createInitialState();
     state.screen = "customSource";
@@ -286,8 +321,38 @@ describe("tui state", () => {
 
     expect(state.screen as string).toBe("dashboard");
     expect(state.customSource).toBe("/some/custom/path");
+    expect(state.recentCustomSources).toEqual(["/some/custom/path"]);
     expect(state.sourceMode as string).toBe("custom");
     expect(state.destinationMode as string).toBe("project");
+  });
+
+  it("customSource enter on a recent path selects and saves it", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+    state.textInput = "";
+    state.recentCustomSources = ["/recent/a", "/recent/b"];
+    state.cursor = 2;
+
+    handleTuiKey(state, "enter");
+
+    expect(state.screen as string).toBe("dashboard");
+    expect(state.customSource).toBe("/recent/b");
+    expect(state.recentCustomSources).toEqual(["/recent/b", "/recent/a"]);
+  });
+
+  it("customSource arrow keys move through recent paths", () => {
+    const state = createInitialState();
+    state.screen = "customSource";
+    state.recentCustomSources = ["/recent/a", "/recent/b"];
+
+    handleTuiKey(state, "down");
+
+    expect(state.cursor).toBe(1);
+  });
+
+  it("rememberCustomSource keeps the three most recent unique values", () => {
+    expect(rememberCustomSource(["/b", "/c", "/d"], "/a")).toEqual(["/a", "/b", "/c"]);
+    expect(rememberCustomSource(["/a", "/b", "/c"], "/b")).toEqual(["/b", "/a", "/c"]);
   });
 
   it("dashboard destination toggles with space key", () => {

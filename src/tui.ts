@@ -3,13 +3,19 @@ import { ProcessTerminal, VStack, cel } from "@cel-tui/core";
 import type { Logger } from "./build.js";
 import { listPresets } from "./presets.js";
 import { initializeMissingSource, runTuiAction } from "./tui/actions.js";
+import { readClipboardText } from "./tui/clipboard.js";
+import { loadTuiPreferences, saveTuiPreferences, snapshotTuiPreferences } from "./tui/preferences.js";
 import { renderScreen } from "./tui/render.js";
-import { createInitialState, handleTuiKey, type TuiState } from "./tui/state.js";
+import { appendTextInput, createInitialState, handleTuiKey, type TuiState } from "./tui/state.js";
 
 const state: TuiState = createInitialState();
+let lastSavedPreferences = JSON.stringify(snapshotTuiPreferences(state));
 
 function main(): void {
   state.availablePresets = listPresets();
+  const loadError = loadTuiPreferences(state);
+  if (loadError) state.notice = loadError;
+  lastSavedPreferences = JSON.stringify(snapshotTuiPreferences(state));
   cel.init(new ProcessTerminal());
   cel.viewport(renderApp);
 }
@@ -28,6 +34,8 @@ function renderApp() {
       focusable: true,
       onKeyPress: (key) => {
         const effect = handleTuiKey(state, key);
+        const saveError = persistTuiPreferences();
+        if (saveError) state.notice = saveError;
         cel.render();
         void handleEffect(effect);
       },
@@ -56,6 +64,14 @@ async function handleEffect(effect: ReturnType<typeof handleTuiKey>): Promise<vo
       await initializeMissingSource(state, logger);
       if (pendingAction != null) await runTuiAction(state, pendingAction, logger);
     });
+    return;
+  }
+
+  if (effect.type === "pasteClipboard") {
+    if (!appendTextInput(state, readClipboardText())) {
+      state.notice = "Clipboard is empty or contains unsupported text.";
+    }
+    cel.render();
     return;
   }
 
@@ -117,6 +133,15 @@ function pushLog(message: string): void {
   cel.render();
 }
 
+function persistTuiPreferences(): string | undefined {
+  const nextSnapshot = JSON.stringify(snapshotTuiPreferences(state));
+  if (nextSnapshot === lastSavedPreferences) return;
+
+  const error = saveTuiPreferences(state);
+  if (error == null) lastSavedPreferences = nextSnapshot;
+  return error;
+}
+
 function formatActionTitle(action: "validate" | "build" | "install"): string {
   if (action === "validate") return "Validate";
   if (action === "build") return "Build";
@@ -134,6 +159,7 @@ export const __test = {
   },
   resetState(): void {
     Object.assign(state, createInitialState());
+    lastSavedPreferences = JSON.stringify(snapshotTuiPreferences(state));
   },
   handleEffect,
 };

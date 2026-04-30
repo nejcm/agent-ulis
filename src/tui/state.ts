@@ -38,6 +38,7 @@ export interface TuiState {
   sourceMode: SourceMode;
   destinationMode: DestinationMode;
   customSource: string;
+  recentCustomSources: string[];
   textInput: string;
   platforms: Platform[];
   availablePresets: readonly PresetListEntry[];
@@ -55,7 +56,8 @@ export type TuiEffect =
   | { readonly type: "none" }
   | { readonly type: "exit"; readonly code: number }
   | { readonly type: "start"; readonly action: Exclude<TuiAction, "init"> }
-  | { readonly type: "initSource" };
+  | { readonly type: "initSource" }
+  | { readonly type: "pasteClipboard" };
 
 type NavigationDirection = "up" | "down";
 
@@ -82,6 +84,7 @@ export function createInitialState(availablePresets: readonly PresetListEntry[] 
     sourceMode: "project",
     destinationMode: "project",
     customSource: "",
+    recentCustomSources: [],
     textInput: "",
     platforms: [...PLATFORMS],
     availablePresets,
@@ -149,6 +152,21 @@ export function togglePlatformSelection(selected: readonly Platform[], platform:
 
 export function toggleAllPlatformSelections(selected: readonly Platform[]): Platform[] {
   return selected.length === PLATFORMS.length ? [] : [...PLATFORMS];
+}
+
+export function appendTextInput(state: TuiState, text: string): boolean {
+  const value = textInputValue(text);
+  if (value == null) return false;
+  state.textInput += value;
+  state.cursor = 0;
+  state.notice = "";
+  return true;
+}
+
+export function rememberCustomSource(recent: readonly string[], value: string): string[] {
+  const normalized = value.trim();
+  if (!normalized) return [...recent];
+  return [normalized, ...recent.filter((entry) => entry !== normalized)].slice(0, 3);
 }
 
 export function togglePresetSelection(selected: readonly string[], presetName: string): string[] {
@@ -277,6 +295,7 @@ function handleSourceKey(state: TuiState, key: string): TuiEffect {
   } else if (state.cursor === 2) {
     state.textInput = state.customSource;
     state.screen = "customSource";
+    state.cursor = 0;
   } else {
     state.screen = "dashboard";
   }
@@ -286,6 +305,9 @@ function handleSourceKey(state: TuiState, key: string): TuiEffect {
 }
 
 function handleCustomSourceKey(state: TuiState, key: string): TuiEffect {
+  moveCursor(state, key, state.recentCustomSources.length);
+  if (getNavigationDirection(key)) return { type: "none" };
+
   if (isAnyKey(key, "escape")) {
     state.screen = "source";
     state.cursor = 2;
@@ -294,16 +316,23 @@ function handleCustomSourceKey(state: TuiState, key: string): TuiEffect {
 
   if (isAnyKey(key, "backspace", "delete")) {
     state.textInput = state.textInput.slice(0, -1);
+    state.cursor = 0;
     return { type: "none" };
   }
 
   if (isConfirmKey(key)) {
+    if (state.cursor > 0) {
+      const selectedRecent = state.recentCustomSources[state.cursor - 1];
+      if (selectedRecent) state.textInput = selectedRecent;
+    }
+
     const value = state.textInput.trim();
     if (!value) {
       state.notice = "Enter a custom source path first.";
       return { type: "none" };
     }
     state.customSource = value;
+    state.recentCustomSources = rememberCustomSource(state.recentCustomSources, value);
     state.sourceMode = "custom";
     state.destinationMode = "project";
     state.screen = "dashboard";
@@ -312,10 +341,9 @@ function handleCustomSourceKey(state: TuiState, key: string): TuiEffect {
     return { type: "none" };
   }
 
-  if (key.length === 1) {
-    state.textInput += key;
-    state.notice = "";
-  }
+  if (isPasteKey(key)) return { type: "pasteClipboard" };
+
+  appendTextInput(state, key);
   return { type: "none" };
 }
 
@@ -445,6 +473,10 @@ function isToggleKey(key: string): boolean {
   return isConfirmKey(key) || isAnyKey(key, "x", " ", "space");
 }
 
+function isPasteKey(key: string): boolean {
+  return isAnyKey(key, "ctrl+v", "cmd+v", "command+v", "meta+v");
+}
+
 function isUpKey(key: string): boolean {
   return isAnyKey(key, "k", "up", "arrowup");
 }
@@ -471,14 +503,22 @@ function keyEventId(key: string): string {
   const direction = getNavigationDirection(key);
   if (direction) return `nav:${direction}`;
   if (isConfirmKey(key)) return "confirm";
+  if (isPasteKey(key)) return "paste";
   if (isAnyKey(key, " ", "space")) return "space";
   return key;
+}
+
+function textInputValue(key: string): string | undefined {
+  const text = key.replaceAll("\u001b[200~", "").replaceAll("\u001b[201~", "");
+  if (text.length === 0 || /[\u0000-\u001f\u007f]/.test(text)) return undefined;
+  return text;
 }
 
 function normalizeKey(rawKey: string): string {
   if (rawKey.length === 0) return rawKey;
 
   if (rawKey === "\u0003") return "ctrl+c";
+  if (rawKey === "\u0016") return "ctrl+v";
   if (isAnyKey(rawKey, "\r", "\n")) return "enter";
   if (isAnyKey(rawKey, "\u007f", "\u0008")) return "backspace";
   if (rawKey === "\u001b[3~") return "delete";
@@ -493,5 +533,10 @@ function normalizeKey(rawKey: string): string {
   if (isAnyKey(lowered, "del")) return "delete";
   if (isAnyKey(lowered, "esc")) return "escape";
 
-  return lowered.startsWith("ctrl+") ? lowered : rawKey;
+  return lowered.startsWith("ctrl+") ||
+    lowered.startsWith("cmd+") ||
+    lowered.startsWith("command+") ||
+    lowered.startsWith("meta+")
+    ? lowered
+    : rawKey;
 }

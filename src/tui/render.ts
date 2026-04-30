@@ -115,14 +115,25 @@ function renderSourceSelection(state: TuiState) {
 }
 
 function renderCustomSource(state: TuiState) {
-  return renderCard("Custom Source Path", "Type a source directory path, then press Enter.", [
-    { text: `Path: ${state.textInput || "_"}`, fgColor: "color06", bold: true },
-    { text: "" },
-    {
-      text: state.notice || "Use Backspace to edit. Press Escape to cancel.",
-      fgColor: state.notice ? "color03" : "color08",
-    },
-  ]);
+  const lines: UiLine[] = [selectableLine(state.cursor, 0, `Path: ${state.textInput || "_"}`), { text: "" }];
+
+  if (state.recentCustomSources.length > 0) {
+    lines.push({ text: "Recent custom sources", fgColor: "color06", bold: true });
+    for (let index = 0; index < state.recentCustomSources.length; index++) {
+      const source = state.recentCustomSources[index];
+      if (!source) continue;
+      lines.push(selectableLine(state.cursor, index + 1, source));
+    }
+    lines.push({ text: "" });
+  }
+
+  lines.push({
+    text:
+      state.notice || "Type to edit. Enter saves the current path. Use Up/Down to pick recent paths. Escape cancels.",
+    fgColor: state.notice ? "color03" : "color08",
+  });
+
+  return renderCard("Custom Source Path", "Type a source directory path, then press Enter.", lines);
 }
 
 function renderPresets(state: TuiState) {
