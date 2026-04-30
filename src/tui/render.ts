@@ -27,8 +27,7 @@ const TITLE = [
   "| |_| | |___ | | ___) |",
   " \\___/|_____|___|____/ ",
 ].join("\n");
-const SUBTITLE =
-  "ULIS - Unified LLM Interface Specification. Define AI config once, then generate native configs for each tool.";
+const SUBTITLE = `ULIS - Unified LLM Interface Specification. Define AI configs once, then generate native configs for each tool.`;
 
 export function renderScreen(state: TuiState) {
   switch (state.screen) {
