@@ -1,6 +1,6 @@
 # ulis
 
-> Unified LLM Interface Specification — one config source, five AI tools.
+> Unified LLM Interface Specification — one config source for AI tools.
 
 `ulis` is a CLI that helps you write your agent configuration once, then publish it to:
 [Claude Code](https://claude.ai/code), [OpenCode](https://opencode.ai), [Codex](https://github.com/openai/codex), [Cursor](https://cursor.com), and [ForgeCode](https://forgecode.dev/docs/).
