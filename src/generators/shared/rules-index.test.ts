@@ -37,4 +37,22 @@ describe("buildRulesIndex", () => {
     ]);
     expect(result?.appendEntry.content).toContain("`.forge/rules/common/code-review.md`");
   });
+
+  it("supports a distinct reference prefix for AGENTS.md links", () => {
+    const sourceDir = mkdtempSync(join(tmpdir(), "ulis-rules-index-"));
+    const rulePath = join(sourceDir, "rules", "common", "code-review.md");
+    mkdirSync(join(sourceDir, "rules", "common"), { recursive: true });
+    writeFileSync(rulePath, "rule content\n");
+
+    const result = buildRulesIndex([createRule()], {
+      sourceDir,
+      artifactPrefix: "rules",
+      referencePrefix: ".codex/rules",
+      indexPath: "AGENTS.md",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.artifacts).toEqual([{ path: "rules/common/code-review.md", contents: "rule content\n" }]);
+    expect(result?.appendEntry.content).toContain("`.codex/rules/common/code-review.md`");
+  });
 });

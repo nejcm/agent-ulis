@@ -16,6 +16,11 @@ export interface RulesIndexOptions {
    * Relative path for the index injection file, e.g. `"AGENTS.md"` or `".forge/RULES.md"`.
    */
   indexPath: string;
+  /**
+   * Optional path prefix used when rendering rule references in the injected index.
+   * Defaults to `artifactPrefix` when omitted.
+   */
+  referencePrefix?: string;
 }
 
 /**
@@ -49,7 +54,8 @@ export function buildRulesIndex(
     "",
   ];
   for (const rule of enabledRules) {
-    const referencedRulePath = join(opts.artifactPrefix, rule.filename).replaceAll("\\", "/");
+    const referencePrefix = opts.referencePrefix ?? opts.artifactPrefix;
+    const referencedRulePath = join(referencePrefix, rule.filename).replaceAll("\\", "/");
     let line = `- **${rule.name}** (\`${referencedRulePath}\`)`;
     if (rule.frontmatter.description) line += `: ${rule.frontmatter.description}`;
     if (rule.frontmatter.paths?.length) {
