@@ -20,8 +20,15 @@ interface UiLine {
 }
 
 const CARD_MAX_WIDTH = 104;
-const TITLE = "ULIS Config Studio";
-const SUBTITLE = "Dashboard for validating, building, and installing platform configs.";
+const TITLE = [
+  " _   _ _     ___ ____  ",
+  "| | | | |   |_ _/ ___| ",
+  "| | | | |    | |\\___ \\ ",
+  "| |_| | |___ | | ___) |",
+  " \\___/|_____|___|____/ ",
+].join("\n");
+const SUBTITLE =
+  "ULIS - Unified LLM Interface Specification. Define AI config once, then generate native configs for each tool.";
 
 export function renderScreen(state: TuiState) {
   switch (state.screen) {
@@ -71,7 +78,8 @@ function renderDashboard(state: TuiState) {
     { text: `Platforms: ${formatPlatforms(state.platforms)}` },
     { text: "" },
     { text: `Presets: ${formatPresets(state)}` },
-    { text: `Backup: ${state.backup ? "on" : "off"}   Rebuild before install: ${state.rebuild ? "on" : "off"}` },
+    { text: `Backup: ${state.backup ? "on" : "off"}` },
+    { text: `Rebuild before install: ${state.rebuild ? "on" : "off"}` },
     { text: "" },
     { text: "Actions", fgColor: "color06", bold: true },
     { text: "" },
@@ -216,22 +224,26 @@ function renderCard(title: string, subtitle: string, lines: readonly UiLine[]) {
       VStack(
         {
           width: "100%",
-          bgColor: "color06",
-          fgColor: "color00",
-          padding: { x: 1 },
+          padding: { x: 1, y: 1 },
           alignItems: "stretch",
         },
-        [Text(title, { bold: true, wrap: "word", fgColor: "color07" })],
+        [Text(title, { bold: true, wrap: "word", fgColor: "color06" })],
       ),
       VStack(
         {
           width: "100%",
-          bgColor: "color08",
-          fgColor: "color07",
           padding: { x: 1 },
           alignItems: "stretch",
         },
-        [Text(subtitle, { wrap: "word" })],
+        [Text(subtitle, { wrap: "word", fgColor: "color08" })],
+      ),
+      VStack(
+        {
+          width: "100%",
+          padding: { x: 1 },
+          alignItems: "stretch",
+        },
+        [Text(" ")],
       ),
       ...lines.map((line) =>
         line.value == null

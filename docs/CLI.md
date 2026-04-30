@@ -95,7 +95,15 @@ Launch the interactive terminal dashboard. Use it to choose a source, select pre
 ulis tui
 ```
 
-The TUI supports project `.ulis/`, global `~/.ulis/`, and custom source paths. Install destinations are explicit: project-local configs or home-level configs. If a project or global source is missing, the TUI can initialize it before continuing. Installs require a review screen and default to backing up existing configs.
+The TUI supports project `.ulis/`, global `~/.ulis/`, and custom source paths. Install destinations are explicit: project-local configs or home-level configs. If a project or global source is missing, the TUI can initialize it before continuing. Installs require a review screen where `backup` and `rebuild` can be toggled before execution (both default to enabled).
+
+Keyboard controls:
+
+- `j` / `k` or arrow keys move selection.
+- `Enter` confirms selections and runs actions.
+- `x` or `Space` toggles checkbox-style options (destination, presets, platforms, install options).
+- `Backspace` goes back to the previous screen.
+- `q` or `Ctrl+C` exits from non-input screens.
 
 ---
 

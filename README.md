@@ -199,9 +199,10 @@ src/
   generators/              # claude, opencode, codex, cursor, forgecode
   schema/                  # Zod schemas (ulis-config, agent, mcp, …)
   scaffold/                # inline templates used by `ulis init`
+  tui/                     # TUI dashboard state/actions/render modules
   utils/                   # config-loader, resolve-source, fs, logger, …
   validators/              # cross-ref + collision checks
-  tui.ts                   # interactive UI
+  tui.ts                   # TUI entrypoint + effect runner
   tools/                   # gen-json-schema, gen-reference
 example/                   # reference example config
 tests/
@@ -213,7 +214,7 @@ docs/
 ### Testing
 
 The `bun run dev` command builds against `example/` so the CLI works without any `.ulis/` in the current directory.
-The `bun run dev:install --source example` commands installs the example into global configs.
+The `bun run dev:install --source example` command installs the example into global configs.
 
 ---
 
