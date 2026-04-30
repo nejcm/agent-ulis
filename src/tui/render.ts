@@ -1,4 +1,4 @@
-import { Text, VStack, type Color } from "@cel-tui/core";
+import { HStack, Text, VStack, type Color } from "@cel-tui/core";
 
 import { PLATFORM_DESCRIPTIONS, PLATFORM_LABELS, PLATFORMS, type Platform } from "../platforms.js";
 import {
@@ -12,6 +12,7 @@ import {
 
 interface UiLine {
   readonly text: string;
+  readonly value?: string;
   readonly fgColor?: Color;
   readonly bgColor?: Color;
   readonly bold?: boolean;
@@ -46,20 +47,21 @@ export function renderScreen(state: TuiState) {
         { text: "" },
         ...renderLogLines(state),
         { text: "" },
-        { text: "Press Enter to return to the dashboard, or q to quit.", fgColor: "color00", bgColor: "color06", bold: true },
+        {
+          text: "Press Enter to return to the dashboard, or q to quit.",
+          fgColor: "color00",
+          bgColor: "color06",
+          bold: true,
+        },
       ]);
   }
 }
 
 function renderDashboard(state: TuiState) {
   const plan = planSource(state);
-  const rows: UiLine[] = DASHBOARD_ITEMS.map((label, index) => {
-    const selected = state.cursor === index;
-    return {
-      text: `${selected ? ">" : " "} ${dashboardLabel(state, label)}`,
-      bgColor: selected ? "color08" : undefined,
-      bold: selected,
-    };
+  const rows: UiLine[] = DASHBOARD_ITEMS.flatMap((label, index) => {
+    const row = dashboardActionLine(state, label, index);
+    return index === 3 ? [row, { text: "" }] : [row];
   });
 
   return renderCard(TITLE, SUBTITLE, [
@@ -67,10 +69,12 @@ function renderDashboard(state: TuiState) {
     { text: `Source: ${formatSourceMode(state.sourceMode)} -> ${plan.sourceDir}` },
     { text: `Destination: ${formatDestinationMode(state.destinationMode)} -> ${plan.destBase}` },
     { text: `Platforms: ${formatPlatforms(state.platforms)}` },
+    { text: "" },
     { text: `Presets: ${formatPresets(state)}` },
     { text: `Backup: ${state.backup ? "on" : "off"}   Rebuild before install: ${state.rebuild ? "on" : "off"}` },
     { text: "" },
     { text: "Actions", fgColor: "color06", bold: true },
+    { text: "" },
     ...rows,
     { text: "" },
     {
@@ -81,23 +85,19 @@ function renderDashboard(state: TuiState) {
 }
 
 function dashboardLabel(state: TuiState, label: (typeof DASHBOARD_ITEMS)[number]): string {
-  if (label === "Source") return `Source (${formatSourceMode(state.sourceMode)})`;
-  if (label === "Destination") return `Destination (${formatDestinationMode(state.destinationMode)})`;
-  if (label === "Presets") return `Presets (${state.selectedPresetNames.length} selected)`;
-  if (label === "Platforms") return `Platforms (${state.platforms.length} selected)`;
+  if (label === "Source") return formatSourceMode(state.sourceMode);
+  if (label === "Destination") return formatDestinationMode(state.destinationMode);
+  if (label === "Presets") return `${state.selectedPresetNames.length} selected`;
+  if (label === "Platforms") return `${state.platforms.length} selected`;
   return label;
 }
 
 function renderSourceSelection(state: TuiState) {
-  const options = [
-    "Project .ulis/ (default for repository-local config)",
-    "Global ~/.ulis/ (default for home tool configs)",
-    `Custom path${state.customSource ? ` (${state.customSource})` : ""}`,
-    "Back to dashboard",
-  ];
-
   return renderCard("Select Source", "Choose which ULIS source tree the dashboard should read.", [
-    ...options.map((option, index) => selectableLine(state.cursor, index, option)),
+    selectableLabelValueLine(state.cursor, 0, "Project", ".ulis/ (repository-local config)"),
+    selectableLabelValueLine(state.cursor, 1, "Global", "~/.ulis/ (home tool configs)"),
+    selectableLabelValueLine(state.cursor, 2, "Custom", state.customSource || "Set custom path"),
+    selectableLine(state.cursor, 3, "Back to dashboard"),
     { text: "" },
     { text: "Project and global choices also update the default install destination.", fgColor: "color08" },
   ]);
@@ -107,7 +107,10 @@ function renderCustomSource(state: TuiState) {
   return renderCard("Custom Source Path", "Type a source directory path, then press Enter.", [
     { text: `Path: ${state.textInput || "_"}`, fgColor: "color06", bold: true },
     { text: "" },
-    { text: state.notice || "Use Backspace to edit. Press Escape to cancel.", fgColor: state.notice ? "color03" : "color08" },
+    {
+      text: state.notice || "Use Backspace to edit. Press Escape to cancel.",
+      fgColor: state.notice ? "color03" : "color08",
+    },
   ]);
 }
 
@@ -129,7 +132,10 @@ function renderPresets(state: TuiState) {
   lines.push({ text: "" });
   lines.push(selectableLine(state.cursor, doneIndex, "Back to dashboard"));
   lines.push({ text: "" });
-  lines.push({ text: "Selected presets are applied before the base source, so the base source wins on conflicts.", fgColor: "color08" });
+  lines.push({
+    text: "Selected presets are applied before the base source, so the base source wins on conflicts.",
+    fgColor: "color08",
+  });
 
   return renderCard("Select Presets", "Choose optional presets for Validate, Build, and Install.", lines);
 }
@@ -158,17 +164,16 @@ function renderPlatforms(state: TuiState) {
 
 function renderMissingSource(state: TuiState) {
   const plan = planSource(state);
-  const lines: UiLine[] = [
-    { text: `Missing source: ${plan.sourceDir}`, fgColor: "color03", bold: true },
-    { text: "" },
-  ];
+  const lines: UiLine[] = [{ text: `Missing source: ${plan.sourceDir}`, fgColor: "color03", bold: true }, { text: "" }];
 
   if (state.sourceMode !== "custom") {
     lines.push(selectableLine(state.cursor, 0, `Initialize ${formatSourceMode(state.sourceMode)}`));
     lines.push(selectableLine(state.cursor, 1, "Choose a different source"));
     lines.push(selectableLine(state.cursor, 2, "Back to dashboard"));
   } else {
-    lines.push({ text: "Custom sources cannot be initialized automatically because their project name and owner are unknown." });
+    lines.push({
+      text: "Custom sources cannot be initialized automatically because their project name and owner are unknown.",
+    });
     lines.push(selectableLine(state.cursor, 0, "Choose a different source"));
     lines.push(selectableLine(state.cursor, 1, "Back to dashboard"));
   }
@@ -229,16 +234,31 @@ function renderCard(title: string, subtitle: string, lines: readonly UiLine[]) {
         [Text(subtitle, { wrap: "word" })],
       ),
       ...lines.map((line) =>
-        VStack(
-          {
-            width: "100%",
-            fgColor: line.fgColor,
-            bgColor: line.bgColor,
-            padding: { x: 1 + (line.indent ?? 0) },
-            alignItems: "stretch",
-          },
-          [Text(line.text || " ", { bold: line.bold, wrap: "word" })],
-        ),
+        line.value == null
+          ? VStack(
+              {
+                width: "100%",
+                fgColor: line.fgColor,
+                bgColor: line.bgColor,
+                padding: { x: 1 + (line.indent ?? 0) },
+                alignItems: "stretch",
+              },
+              [Text(line.text || " ", { bold: line.bold, wrap: "word" })],
+            )
+          : HStack(
+              {
+                width: "100%",
+                fgColor: line.fgColor,
+                bgColor: line.bgColor,
+                padding: { x: 1 + (line.indent ?? 0) },
+                alignItems: "start",
+                justifyContent: "space-between",
+              },
+              [
+                Text(line.text || " ", { bold: line.bold, wrap: "word" }),
+                Text(line.value, { bold: line.bold, fgColor: "color06", wrap: "word" }),
+              ],
+            ),
       ),
       VStack(
         {
@@ -247,7 +267,12 @@ function renderCard(title: string, subtitle: string, lines: readonly UiLine[]) {
           padding: { x: 1 },
           alignItems: "stretch",
         },
-        [Text("Controls: j/k or arrows to move, Enter to continue, x/space to toggle, q to quit", { wrap: "word" })],
+        [
+          Text(
+            "Controls: j/k or arrows to move, Enter to continue, Backspace to go back, x/space to toggle, q to quit",
+            { wrap: "word" },
+          ),
+        ],
       ),
     ],
   );
@@ -265,4 +290,27 @@ function selectableLine(cursor: number, index: number, text: string): UiLine {
 
 function formatPlatforms(platforms: readonly Platform[]): string {
   return platforms.length > 0 ? platforms.map((platform) => PLATFORM_LABELS[platform]).join(", ") : "none";
+}
+
+function dashboardActionLine(state: TuiState, label: (typeof DASHBOARD_ITEMS)[number], index: number): UiLine {
+  const selected = state.cursor === index;
+  const value = dashboardLabel(state, label);
+  const hasValue = value !== label;
+  return {
+    text: `${selected ? ">" : " "} ${label}`,
+    value: hasValue ? value : undefined,
+    bgColor: selected ? "color08" : undefined,
+    bold: selected,
+  };
+}
+
+function selectableLabelValueLine(cursor: number, index: number, label: string, value: string): UiLine {
+  const focused = cursor === index;
+  return {
+    text: `${focused ? ">" : " "} ${label}`,
+    value,
+    bgColor: focused ? "color08" : undefined,
+    fgColor: focused ? "color07" : undefined,
+    bold: focused,
+  };
 }

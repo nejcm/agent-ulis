@@ -8,6 +8,7 @@ const initializeMissingSourceMock = mock(async () => {});
 mock.module("@cel-tui/core", () => ({
   ProcessTerminal: class ProcessTerminal {},
   VStack: (...args: unknown[]) => args,
+  HStack: (...args: unknown[]) => args,
   Text: (...args: unknown[]) => args,
   cel: {
     init: mock(() => {}),

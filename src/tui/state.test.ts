@@ -303,6 +303,15 @@ describe("tui state", () => {
     expect(state.destinationMode).toBe("project");
   });
 
+  it("dashboard destination toggles with named space key", () => {
+    const state = createInitialState();
+    state.cursor = 1;
+
+    handleTuiKey(state, "space");
+
+    expect(state.destinationMode).toBe("global");
+  });
+
   it("dashboard destination toggles with x key", () => {
     const state = createInitialState();
     state.cursor = 1;
@@ -310,6 +319,50 @@ describe("tui state", () => {
     handleTuiKey(state, "x");
 
     expect(state.destinationMode).toBe("global");
+  });
+
+  it("backspace on source screen returns to dashboard", () => {
+    const state = createInitialState();
+    state.screen = "source";
+    state.cursor = 2;
+
+    handleTuiKey(state, "backspace");
+
+    expect(state.screen as string).toBe("dashboard");
+    expect(state.cursor).toBe(0);
+  });
+
+  it("backspace on presets screen returns to dashboard", () => {
+    const state = createInitialState();
+    state.screen = "presets";
+    state.cursor = 1;
+
+    handleTuiKey(state, "backspace");
+
+    expect(state.screen as string).toBe("dashboard");
+    expect(state.cursor).toBe(0);
+  });
+
+  it("backspace on platforms screen returns to dashboard", () => {
+    const state = createInitialState();
+    state.screen = "platforms";
+    state.cursor = 3;
+
+    handleTuiKey(state, "backspace");
+
+    expect(state.screen as string).toBe("dashboard");
+    expect(state.cursor).toBe(0);
+  });
+
+  it("backspace on installReview returns to dashboard install action", () => {
+    const state = createInitialState();
+    state.screen = "installReview";
+    state.cursor = 0;
+
+    handleTuiKey(state, "backspace");
+
+    expect(state.screen as string).toBe("dashboard");
+    expect(state.cursor).toBe(6);
   });
 
   it("pendingAction is cleared when navigating away from result screen", () => {

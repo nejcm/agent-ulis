@@ -160,6 +160,10 @@ export function handleTuiKey(state: TuiState, key: string): TuiEffect {
     return { type: "exit", code: 0 };
   }
 
+  if (isAnyKey(key, "backspace") && state.screen !== "customSource") {
+    return navigateBack(state);
+  }
+
   switch (state.screen) {
     case "dashboard":
       return handleDashboardKey(state, key);
@@ -178,6 +182,32 @@ export function handleTuiKey(state: TuiState, key: string): TuiEffect {
     case "result":
       return handleResultKey(state, key);
   }
+}
+
+function navigateBack(state: TuiState): TuiEffect {
+  if (state.screen === "source" || state.screen === "presets" || state.screen === "platforms" || state.screen === "missingSource") {
+    state.screen = "dashboard";
+    state.cursor = 0;
+    state.notice = "";
+    return { type: "none" };
+  }
+
+  if (state.screen === "installReview") {
+    state.screen = "dashboard";
+    state.cursor = 6;
+    state.notice = "";
+    return { type: "none" };
+  }
+
+  if (state.screen === "result") {
+    state.screen = "dashboard";
+    state.cursor = 0;
+    state.notice = "";
+    state.pendingAction = undefined;
+    return { type: "none" };
+  }
+
+  return { type: "none" };
 }
 
 function handleDashboardKey(state: TuiState, key: string): TuiEffect {
@@ -399,7 +429,7 @@ function isConfirmKey(key: string): boolean {
 }
 
 function isToggleKey(key: string): boolean {
-  return isAnyKey(key, "enter", "x", " ");
+  return isAnyKey(key, "enter", "x", " ", "space");
 }
 
 function isUpKey(key: string): boolean {
