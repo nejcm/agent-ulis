@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -38,6 +38,34 @@ describe("analyzeProject", () => {
 
     expect(analysis.errorCount).toBe(0);
     expect(analysis.project.agents.length).toBe(1);
+    expect(existsSync(join(sourceDir, "generated"))).toBe(false);
+  });
+
+  it("throws on validation errors and still writes no generated output", () => {
+    const root = createTempRoot();
+    const sourceDir = join(root, ".ulis");
+    cpSync(fixturesDir, sourceDir, { recursive: true });
+
+    const duplicateSkillDir = join(sourceDir, "skills", "duplicate-skill");
+    mkdirSync(duplicateSkillDir, { recursive: true });
+    writeFileSync(
+      join(duplicateSkillDir, "SKILL.md"),
+      `---
+name: my-skill
+description: A minimal test skill duplicate
+custom_agent_hint: keep-me
+allowImplicitInvocation: false
+platforms:
+  codex:
+    model: gpt-5.4
+---
+
+Duplicate skill for test.`,
+    );
+
+    // This path intentionally exercises the failing analysis path; parse or validation
+    // failures are both acceptable so long as no generated files are written.
+    expect(() => analyzeProject({ sourceDir, logger: silentLogger })).toThrow("No files written.");
     expect(existsSync(join(sourceDir, "generated"))).toBe(false);
   });
 });

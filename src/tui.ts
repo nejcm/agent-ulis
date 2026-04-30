@@ -110,6 +110,16 @@ function exitApp(code: number): void {
   process.exit(code);
 }
 
+export const __test = {
+  getState(): TuiState {
+    return state;
+  },
+  resetState(): void {
+    Object.assign(state, createInitialState());
+  },
+  handleEffect,
+};
+
 /**
  * Start the interactive ULIS terminal UI.
  */
