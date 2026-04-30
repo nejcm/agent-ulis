@@ -48,7 +48,7 @@ export interface TuiState {
   notice: string;
   resultTitle: string;
   resultMessage: string;
-  pendingAction?: TuiAction;
+  pendingAction?: Exclude<TuiAction, "init">;
 }
 
 export type TuiEffect =
@@ -60,9 +60,7 @@ export type TuiEffect =
 type NavigationDirection = "up" | "down";
 
 const NAV_DUPLICATE_WINDOW_MS = 40;
-let lastNavigationEvent:
-  | { readonly direction: NavigationDirection; readonly key: string; readonly at: number }
-  | undefined;
+let lastNavigationEvent: { readonly direction: NavigationDirection; readonly at: number } | undefined;
 
 export const DASHBOARD_ITEMS = [
   "Source",
@@ -425,7 +423,7 @@ function startOrMissingSource(state: TuiState, action: Exclude<TuiAction, "init"
 
 function moveCursor(state: TuiState, key: string, lastIndex: number): void {
   const direction = getNavigationDirection(key);
-  if (!direction || isDuplicateNavigationAlias(direction, key)) return;
+  if (!direction || isDuplicateNavigationAlias(direction)) return;
 
   if (direction === "up") {
     state.cursor = (state.cursor + lastIndex) % (lastIndex + 1);
@@ -460,14 +458,14 @@ function getNavigationDirection(key: string): NavigationDirection | undefined {
   return undefined;
 }
 
-function isDuplicateNavigationAlias(direction: NavigationDirection, key: string): boolean {
+function isDuplicateNavigationAlias(direction: NavigationDirection): boolean {
   const now = Date.now();
   const duplicate =
     lastNavigationEvent != null &&
     lastNavigationEvent.direction === direction &&
     now - lastNavigationEvent.at <= NAV_DUPLICATE_WINDOW_MS;
 
-  lastNavigationEvent = { direction, key, at: now };
+  lastNavigationEvent = { direction, at: now };
   return duplicate;
 }
 

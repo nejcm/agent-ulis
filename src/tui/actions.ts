@@ -1,9 +1,8 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 
-import { analyzeProject, runBuild, type Logger } from "../build.js";
+import { analyzeProject, type Logger } from "../build.js";
 import { initCmd } from "../commands/init.js";
-import { runInstall } from "../install.js";
 import { planSource, selectedPresets, type TuiAction, type TuiState } from "./state.js";
 
 interface RuntimeDependencies {
