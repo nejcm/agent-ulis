@@ -13,7 +13,7 @@ export interface RulesIndexOptions {
    */
   artifactPrefix: string;
   /**
-   * Relative path for the index injection file, e.g. `"AGENTS.md"` or `".forge/RULES.md"`.
+   * Relative path for the index injection file, e.g. `"AGENTS.md"`.
    */
   indexPath: string;
   /**
