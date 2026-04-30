@@ -30,7 +30,7 @@ export function generateCodex(project: ProjectBundle): GenerationResult {
       sourceDir: project.sourceDir,
       artifactPrefix: "rules",
       indexPath: "AGENTS.md",
-      referencePrefix: join(PLATFORM_DIRS.codex.project, "rules"),
+      referencePrefix: join("~", PLATFORM_DIRS.codex.home, "rules"),
     });
     if (result) {
       artifacts.push(...result.artifacts);

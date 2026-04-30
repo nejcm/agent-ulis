@@ -44,7 +44,7 @@ describe("generateForgecode", () => {
     expect(result.post.appendAfterRaw).toEqual([
       {
         path: "AGENTS.md",
-        content: expect.stringContaining("`.forge/rules/common/security.md`"),
+        content: expect.stringContaining("`~/.forge/rules/common/security.md`"),
       },
     ]);
   });

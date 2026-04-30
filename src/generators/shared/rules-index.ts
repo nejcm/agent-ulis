@@ -17,7 +17,8 @@ export interface RulesIndexOptions {
    */
   indexPath: string;
   /**
-   * Optional path prefix used when rendering rule references in the injected index.
+   * Optional path prefix used when rendering rule references in the injected index,
+   * e.g. `"~/.codex/rules"`.
    * Defaults to `artifactPrefix` when omitted.
    */
   referencePrefix?: string;

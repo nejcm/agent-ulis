@@ -34,7 +34,7 @@ export function generateOpencode(project: ProjectBundle): GenerationResult {
       sourceDir: project.sourceDir,
       artifactPrefix: "rules",
       indexPath: "AGENTS.md",
-      referencePrefix: join(PLATFORM_DIRS.opencode.project, "rules"),
+      referencePrefix: join("~", PLATFORM_DIRS.opencode.home, "rules"),
     });
     if (result) {
       artifacts.push(...result.artifacts);

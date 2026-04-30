@@ -26,7 +26,7 @@ export function generateForgecode(project: ProjectBundle): GenerationResult {
       sourceDir: project.sourceDir,
       artifactPrefix: join(".forge", "rules"),
       indexPath: "AGENTS.md",
-      referencePrefix: join(PLATFORM_DIRS.forgecode.project, "rules"),
+      referencePrefix: join("~", PLATFORM_DIRS.forgecode.home, "rules"),
     });
     if (result) {
       artifacts.push(...result.artifacts);
