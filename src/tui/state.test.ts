@@ -475,35 +475,16 @@ describe("tui state", () => {
     expect(state.destinationMode).toBe("global");
   });
 
-  it("deduplicates rapid text key events in custom source TextInput handler", () => {
+  it("custom source TextInput handler does not dedupe rapid letter keys", () => {
     const state = createInitialState();
     state.screen = "customSource";
     const originalNow = Date.now;
     let now = 3_000;
     Date.now = () => now;
     try {
-      const first = handleCustomSourceTextInputKey(state, "l");
+      expect(handleCustomSourceTextInputKey(state, "l").preventDefault).toBe(false);
       now += 5;
-      const second = handleCustomSourceTextInputKey(state, "l");
-      expect(first.preventDefault).toBe(false);
-      expect(second.preventDefault).toBe(true);
-    } finally {
-      Date.now = originalNow;
-    }
-  });
-
-  it("allows repeated text key events outside dedupe window in TextInput handler", () => {
-    const state = createInitialState();
-    state.screen = "customSource";
-    const originalNow = Date.now;
-    let now = 3_000;
-    Date.now = () => now;
-    try {
-      const first = handleCustomSourceTextInputKey(state, "l");
-      now += 45;
-      const second = handleCustomSourceTextInputKey(state, "l");
-      expect(first.preventDefault).toBe(false);
-      expect(second.preventDefault).toBe(false);
+      expect(handleCustomSourceTextInputKey(state, "l").preventDefault).toBe(false);
     } finally {
       Date.now = originalNow;
     }
