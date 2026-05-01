@@ -332,9 +332,6 @@ export function handleCustomSourceTextInputKey(state: TuiState, key: string): Cu
   if (state.screen !== "customSource" || state.cursor !== 0) {
     return { effect: { type: "none" }, preventDefault: false };
   }
-  if (isDuplicateKeyEvent(key)) {
-    return { effect: { type: "none" }, preventDefault: true };
-  }
 
   const direction = getNavigationDirection(key);
   if (direction) {
