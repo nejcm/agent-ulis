@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { emptyYamlAsEmptyObject } from "../utils/yaml";
+import { emptyYamlAsEmptyObject } from "../utils/yaml.js";
 
 export const McpServerSchema = z.object({
   type: z.enum(["local", "remote"]),

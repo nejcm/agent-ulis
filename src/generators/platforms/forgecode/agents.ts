@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { ParsedAgent } from "../../../parsers/agent.js";
 import { buildPolicyCommentBlock } from "../../../utils/policy-comments.js";
 import { mapTools } from "../../../utils/tool-mapper.js";
-import { extraToYamlLines } from "../../shared/yaml";
+import { extraToYamlLines } from "../../shared/yaml.js";
 import type { FileArtifact } from "../../types.js";
 
 const EFFORT_MAP: Record<string, string> = { low: "low", medium: "medium", high: "high", max: "high" };

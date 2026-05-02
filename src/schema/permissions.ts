@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { CLAUDE_PERMISSION_MODES, CODEX_APPROVAL_MODES } from "../constants.js";
-import { emptyYamlAsEmptyObject } from "../utils/yaml";
+import { emptyYamlAsEmptyObject } from "../utils/yaml.js";
 
 const PermissionActionSchema = z.enum(["allow", "ask", "deny"]);
 const PermissionRuleSchema = z.union([
