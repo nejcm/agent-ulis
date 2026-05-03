@@ -27,6 +27,29 @@ bun add -g @nejcm/ulis
 
 Requires Node 20+. Works with both Node and Bun runtimes.
 
+## Installable skills
+
+`@nejcm/ulis` also ships reusable skills under [`skills/`](skills/).
+
+Install the `ulis` guide skill directly:
+
+```bash
+npx skills@latest add @nejcm/ulis --skill ulis
+```
+
+Or install it through your ULIS source tree:
+
+```yaml
+"*":
+  skills:
+    - name: "@nejcm/ulis"
+      args:
+        - --skill
+        - ulis
+```
+
+That entry belongs in `.ulis/skills.yaml`, then `ulis install` will forward it to the `skills` CLI for supported targets.
+
 ---
 
 ## Quick start — project mode

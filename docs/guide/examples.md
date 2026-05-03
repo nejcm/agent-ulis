@@ -304,6 +304,10 @@ claude:
   skills:
     - name: mattpocock/skills/productivity/grill-me
     - name: https://github.com/mattpocock/skills/tree/main/skills/productivity/write-a-skill
+    - name: "@nejcm/ulis"
+      args:
+        - --skill
+        - ulis
 
 claude:
   skills:
@@ -319,6 +323,8 @@ cursor:
         - --skill
         - repo-review
 ```
+
+`@nejcm/ulis` publishes its own `ulis` usage skill from the package `skills/` directory, so it can be installed the same way as any other external skill source.
 
 ## Raw Overrides
 
